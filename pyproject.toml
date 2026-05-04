@@ -4,4 +4,21 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "pymupdf4llm>=1.27.2.3",
+    "pymupdf>=1.27.2.3",
+    "pytest>=9.0.3",
+]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+]
+[build-system]
+requires = ['uv_build>=0.8.3, <0.9.0']
+build-backend = "uv_build"
+[tool.uv.build-backend]
+module-name = "lazydh"
+module-root = ""
+[tool.pytest.ini_options]
+testpaths = ['tests']
