@@ -1,5 +1,7 @@
 import re
 
+DICE_REGEX = r"(\d+)?d(\d+)(\s*[\+\-]\s*\d+)"
+
 
 def extract_delimited_pattern(
     line, feature_name, regex_pattern="[0-9]+", delimiter=": "
@@ -42,7 +44,7 @@ def highlight_text(text):
         re.compile("([sS]pend a [fF]ear)|([sS]pend [0-9]+ [fF]ear)"),
         re.compile("([mM]ark a [sS]tress)|([mM]ark [0-9]+ [sS]tress)"),
         re.compile(r"(Agility)|(Finesse)|(Instinct)|(Knowledge)|(Presence)|(Strength)"),
-        re.compile(r"(\d+)?d(\d+)((\s+)[\+\-](\s+)\d+)?"),
+        re.compile(DICE_REGEX + r"?"),
     ]
     for each in highlight_patterns:
         regex_match = each.finditer(text)
