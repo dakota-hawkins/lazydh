@@ -22,3 +22,6 @@ module-name = "lazydh"
 module-root = ""
 [tool.pytest.ini_options]
 testpaths = ['tests']
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]

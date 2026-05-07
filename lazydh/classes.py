@@ -141,7 +141,6 @@ description: {self.description}
         self.damage, text = self._search_and_extract(
             text, utils.DICE_REGEX + r"\s*(phy|mag|tech|)?", "Damage"
         )
-        text = re.sub(r"\s+", " ", text.replace("|", "")).strip()
         attack_regex = r"[A-Za-z\s]+: (Melee|Close|Very Close|Far|Very Far)"
         text, __ = self._search_and_extract(text, attack_regex, "Attack Name and Range")
         if ":" not in text:
@@ -273,66 +272,3 @@ class PdfLoader:
             "Bruiser",
             "Minion",
         ]
-
-
-def extract_attack_data(line):
-    if not line.startswith("ATK:"):
-        return None
-    elements = line.split("|")
-    attack = utils.extract_delimited_pattern(
-        elements[0], "ATK", regex_pattern="\+[0-9]+"
-    )
-    weapon_split = elements[1].strip().split(":")
-    weapons = weapon_split[0]
-    weap_range = weapon_split[1]
-    damage = elements[2].strip()
-    return attack, weapons, weap_range, damage
-
-
-def isolate_adversaries(page_text):
-    lines = [x for x in page_text.split("\n") if len(x) > 0]
-    allowed_types = [
-        "Support",
-        "Social",
-        "Horde",
-        "Solo",
-        "Leader",
-        "Skulk",
-        "Bruiser",
-        "Minion",
-    ]
-    tier_regex = re.compile("|".join(["Tier [0-9] " + each for each in allowed_types]))
-    tactics_regex = re.compile("Motives.*Tactics")
-    adversary = Adversary()
-    cur_line = 0
-    is_start = tier_regex.search(lines[cur_line]) is not None
-    while not is_start and cur_line < len(lines):
-        cur_line += 1
-        is_start = tier_regex.search(lines[cur_line]) is not None
-    adversary.name = lines[cur_line - 1].strip().title()
-    adversary.tier = re.search("[0-9]", lines[cur_line]).group()
-    adversary.type = re.sub("Tier [0-9] ", "", lines[cur_line])
-    is_start = False
-    adversary.description = ""
-    while "Motives & Tacticts" not in lines[cur_line]:
-        adversary.description += lines[cur_line]
-        cur_line += 1
-
-    while not is_start and cur_line < len(lines):
-        line = lines[cur_line]
-        if "FEATURES" in line:
-            features = utils.extract_features(lines, cur_line)
-        adversary.difficulty = utils.extract_delimited_pattern(line, "Difficulty")
-        adversary.thresholds = utils.extract_delimited_pattern(
-            line, "Thresholds", regex_pattern="[0-9]+/[0-9]+"
-        )
-        adversary.motives_and_tacticts = utils.extract_delimited_pattern(
-            line, "Motives & Tacticts", ".*"
-        )
-        adversary.stress = utils.extract_delimited_pattern(line, "Stress")
-        adversary.experience = utils.extract_delimited_pattern(
-            line, "Experience", regex_pattern=".*\+[0-9+]"
-        )
-        adversary.atk, adversary.attack, adversary.range, adversary.damage = (
-            extract_attack_data(line)
-        )
