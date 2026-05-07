@@ -47,7 +47,7 @@ class Adversary:
                 self.experience = [self.experience]
             out += "> **Experience:** " + ", ".join(self.experience) + "\n\n"
         if self.feats is not None:
-            out += "## Features " + "\n".join(
+            out += "## Features\n" + "\n".join(
                 [utils.parse_feature(each) for each in self.feats]
             )
 
@@ -89,19 +89,6 @@ description: {self.description}
         out = asdict(self)
         name = out.pop("name")
         return {name: out}
-
-    def _extract_description(text):
-        pass
-
-    def _search_and_extract(self, text, pattern, value, throw_warning=True):
-        match = re.search(pattern, text)
-        if match is not None:
-            match_text = match.group(0)
-            remainder = text.replace(match_text, "")
-            return re.sub(r"\s+", " ", match_text.strip()), remainder
-        elif throw_warning:
-            warnings.warn(f"Could not parse {value} for Adversary: {self.name}")
-        return "", text
 
     def _extract_description(self, non_feature_text: str) -> str:
         self.description, remainder = self._search_and_extract(
@@ -147,8 +134,17 @@ description: {self.description}
             warnings.warn(f"Cannot parse attack name and range for {self.name}")
         else:
             stripped = [x.strip() for x in text.split(":")]
-            print(stripped)
             self.attack, self.atk_range = stripped[0], stripped[1]
+
+    def _search_and_extract(self, text, pattern, value, throw_warning=True):
+        match = re.search(pattern, text)
+        if match is not None:
+            match_text = match.group(0)
+            remainder = text.replace(match_text, "")
+            return re.sub(r"\s+", " ", match_text.strip()), remainder
+        elif throw_warning:
+            warnings.warn(f"Could not parse {value} for Adversary: {self.name}")
+        return "", text
 
     def _extract_and_strip_prefix(
         self, text: str, pattern: str, value: str
@@ -242,13 +238,19 @@ class PdfLoader:
         non_feature_text = advsry._extract_experience(non_feature_text)
         advsry._extract_combat_info(non_feature_text)
 
-        advsry.description, non_feature_text = PdfLoader._extract_description(
-            non_feature_text,
-        )
+        feature_text = []
+        if box_text[start][1].lower() == "features":
+            start += 1
+            while start < len(box_text) and box_text[start][0] != "section-header":
+                feature_text.append(re.sub("\s+", " ", box_text[start][1]).strip())
+                start += 1
+        advsry.feats = feature_text
+
+        return advsry, start
 
     @staticmethod
     def _extract_tier_and_type(text):
-        tier = re.search(r"Tier [0-9]+", text).group(0)
+        tier = re.sub("[A-Za-z\s]", "", re.search(r"Tier [0-9]+", text).group(0))
         stat_type = text.split(" ")[-1].strip().title()
         return tier, stat_type
 
