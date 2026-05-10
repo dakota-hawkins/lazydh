@@ -109,9 +109,9 @@ class Adversary(Statblock):
     thresholds: str = None
     hp: str = None
     stress: str = None
-    atk: str = None
     attack: str = None
-    atk_range: str = None
+    attack_mod: str = None
+    attack_range: str = None
     damage: str = None
     experience: list[str] | None = None
 
@@ -125,7 +125,7 @@ class Adversary(Statblock):
 **Motives & Tactics:** {self.motives_and_tacticts}
 
 > **Difficulty:** {self.difficulty} | **Thresholds:** {self.thresholds} | **HP:** {self.hp} | **Stres:** {self.stress}
-> **ATK:** {self.atk} | **{self.attack}:** {self.atk_range} | {self.damage}
+> **ATK:** {self.attack} | **{self.attack_mod}:** {self.attack_range} | {self.damage}
 """
         if self.experience is not None:
             if isinstance(self.experience, str):
@@ -158,9 +158,9 @@ difficulty: {self.difficulty}
 thresholds: {self.thresholds}
 hp: {self.hp}
 stress: {self.stress}
-attack: {self.atk}
-attack_range: {self.atk_range}
-attack_mod: {self.attack}
+attack: {self.attack}
+attack_range: {self.attack_range}
+attack_mod: {self.attack_mod}
 attack_damage: {self.damage}
 experience: {experiences}
 features: {feature_names}
@@ -200,7 +200,7 @@ source: {self.source}
         self.stress, text = self._extract_and_strip_prefix(
             text, r"(?<=Stress\: )[0-9]+", "Stress"
         )
-        self.atk, text = self._extract_and_strip_prefix(
+        self.attack_mod, text = self._extract_and_strip_prefix(
             text, r"(?<=ATK\: )[\+\-][0-9]+", "ATK"
         )
         self.damage, text = self._search_and_extract(
@@ -212,4 +212,4 @@ source: {self.source}
             warnings.warn(f"Cannot parse attack name and range for {self.name}")
         else:
             stripped = [x.strip() for x in text.split(":")]
-            self.attack, self.atk_range = stripped[0], stripped[1]
+            self.attack, self.attack_range = stripped[0], stripped[1]
