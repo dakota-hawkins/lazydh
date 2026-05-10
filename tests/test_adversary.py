@@ -1,3 +1,5 @@
+import pytest
+
 from lazydh.statblocks import Adversary, Environment
 
 
@@ -18,7 +20,7 @@ class TestAdversaryParsing:
         )
 
     def test_motives_assignment(self):
-        (self.adv.motives_and_tacticts == "Spread Knowledge, Terrorize")
+        (self.adv.motives_and_tactics == "Spread Knowledge, Terrorize")
 
     def test_experience_assignment(self):
         assert self.adv.experience == "Forgotten Knowledge + 2, Haunting +2"
@@ -55,7 +57,7 @@ class TestAdversaryIO:
             tier="2",
             stat_type="Support",
             description="A Remnant of Forgotten Knowledge and Forbidden Secrets",
-            motives_and_tacticts="Spread Knowledge, Terrorize",
+            motives_and_tactics="Spread Knowledge, Terrorize",
             difficulty="14",
             thresholds="10/18",
             hp="4",
@@ -64,14 +66,15 @@ class TestAdversaryIO:
             attack="Maddening Touch",
             attack_range="Melee",
             damage="2d8 + 1 tech",
-            experience=["Forgotten Knowledge +2"],
+            experience="Forgotten Knowledge +2",
             feats=[
                 "Momentum - Reaction: When the Allip makes a successful attack against a PC, you gain Fear.",
-                "Whispers of Madness: Mark a Stress to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a Knowledge Reaction roll or take 1d8 + 1 tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.",
-                "Howling Babble: Mark 2 Stress and choose a point with Far range. All targets within Close range of that point must make a Knowledge Reaction Roll. On a failed save, targets take 2d4 + 3 tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.",
+                "Whispers of Madness - Action: Mark a Stress to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a Knowledge Reaction roll or take 1d8 + 1 tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.",
+                "Howling Babble - Action: Mark 2 Stress and choose a point with Far range. All targets within Close range of that point must make a Knowledge Reaction Roll. On a failed save, targets take 2d4 + 3 tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.",
             ],
             source="Homebrew",
         )
+        self.fantasy_block = self.adv.to_fantasy_statblock()
 
     def test_markdown(self):
         expected = """
@@ -89,9 +92,9 @@ class TestAdversaryIO:
 
 **Momentum - Reaction:** When the Allip makes a successful attack against a PC, you gain Fear.
 
-**Whispers of Madness:** **Mark a Stress** to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a **Knowledge** Reaction roll or take **1d8 + 1** tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.
+**Whispers of Madness - Action:** **Mark a Stress** to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a **Knowledge** Reaction roll or take **1d8 + 1** tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.
 
-**Howling Babble:** **Mark 2 Stress** and choose a point with Far range. All targets within Close range of that point must make a **Knowledge** Reaction Roll. On a failed save, targets take **2d4 + 3** tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.
+**Howling Babble - Action:** **Mark 2 Stress** and choose a point with Far range. All targets within Close range of that point must make a **Knowledge** Reaction Roll. On a failed save, targets take **2d4 + 3** tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.
 """
         expected = expected.rstrip()
         assert self.adv.to_markdown(front_matter=False) == expected
@@ -120,6 +123,45 @@ source: Homebrew
 ---
 """
         assert self.adv._to_yaml_front_matter() == expected
+
+    @pytest.mark.parametrize(
+        "key, value",
+        [
+            ("name", "Allip"),
+            ("tier", "2"),
+            ("stat_type", "Support"),
+            ("description", "A Remnant of Forgotten Knowledge and Forbidden Secrets"),
+            ("motives_and_tactics", "Spread Knowledge, Terrorize"),
+            ("difficulty", "14"),
+            ("thresholds", "10/18"),
+            ("hp", "4"),
+            ("stress", "6"),
+            ("experience", "Forgotten Knowledge +2"),
+            ("attack", "Maddening Touch"),
+            ("atk", "+1"),
+            ("range", "Melee"),
+            ("source", "Homebrew"),
+            (
+                "feats",
+                [
+                    {
+                        "name": "Momentum - Reaction",
+                        "text": "When the Allip makes a successful attack against a PC, you gain Fear.",
+                    },
+                    {
+                        "name": "Whispers of Madness - Action",
+                        "text": "Mark a Stress to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a Knowledge Reaction roll or take 1d8 + 1 tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.",
+                    },
+                    {
+                        "name": "Howling Babble - Action",
+                        "text": "Mark 2 Stress and choose a point with Far range. All targets within Close range of that point must make a Knowledge Reaction Roll. On a failed save, targets take 2d4 + 3 tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.",
+                    },
+                ],
+            ),
+        ],
+    )
+    def test_fantasy_block(self, key, value):
+        assert self.fantasy_block[key] == value
 
 
 class TestEnvironmentParsing:

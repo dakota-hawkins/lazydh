@@ -39,6 +39,14 @@ class Statblock:
         warnings.warn(f"Could not extract {value} for {self.name}")
         return "", text
 
+    def _join_list(self, list_values: str | list[str] | None) -> str:
+        value = ""
+        if list_values is not None:
+            if isinstance(list_values, str):
+                list_values = [list_values]
+            value = ", ".join(list_values)
+        return value
+
 
 @dataclass
 class Environment(Statblock):
@@ -104,7 +112,7 @@ source: {self.source}
 
 @dataclass
 class Adversary(Statblock):
-    motives_and_tacticts: str = None
+    motives_and_tactics: str = None
     difficulty: str = None
     thresholds: str = None
     hp: str = None
@@ -124,7 +132,7 @@ class Adversary(Statblock):
 
 ***Tier {self.tier} {self.stat_type}***
 *{self.description}*
-**Motives & Tactics:** {self.motives_and_tacticts}
+**Motives & Tactics:** {self.motives_and_tactics}
 
 > **Difficulty:** {self.difficulty} | **Thresholds:** {self.thresholds} | **HP:** {self.hp} | **Stress:** {self.stress}
 > **ATK:** {self.attack_mod} | **{self.attack}:** {self.attack_range} | {self.damage}
@@ -144,10 +152,12 @@ class Adversary(Statblock):
         out = asdict(self)
         out["atk"] = out.pop("attack_mod")
         out["range"] = out.pop("attack_range")
-        out["feats"] = []
-        for feat in out.pop("features"):
+        out["experience"] = self._join_list(out.pop("experience"))
+        feats = []
+        for feat in out.pop("feats"):
             name, text = feat.split(":")
-            out[name.strip()] = text.strip()
+            feats.append({"name": name.strip(), "text": text.strip()})
+        out["feats"] = feats
         return out
 
     def _to_yaml_front_matter(self):
@@ -156,11 +166,7 @@ class Adversary(Statblock):
             feature_names = "\n    - " + "\n    - ".join(
                 [f.split(":")[0].split("-")[0].strip() for f in self.feats]
             )
-        experiences = ""
-        if self.experience is not None:
-            if isinstance(self.experience, str):
-                self.experience = [self.experience]
-            experiences = ", ".join(self.experience)
+        experiences = self._join_list(self.experience)
         out = f"""
 ---
 type: adversary
@@ -186,12 +192,12 @@ source: {self.source}
         self.description, text = self._search_and_extract(
             non_feature_text, r"^.*(?=Motives)", "Description"
         )
-        self.motives_and_tacticts, text = self._search_and_extract(
+        self.motives_and_tactics, text = self._search_and_extract(
             text,
             r"Motives & Tactics\:.*(?=Difficulty)",
             "Motives & Tactices",
         )
-        self.motives_and_tacticts = self.motives_and_tacticts.replace(
+        self.motives_and_tactics = self.motives_and_tactics.replace(
             "Motives & Tactics:", ""
         ).strip()
         self.experience, text = self._search_and_extract(
