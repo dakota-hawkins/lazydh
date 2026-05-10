@@ -1,29 +1,7 @@
-from lazydh.statblocks import Adversary
-
-# adv = Adversary(
-#     name="Allip",
-#     tier="2",
-#     stat_type="Support",
-#     description="A Remnant of Forgott Knowledge and Forbidden Secrets",
-#     motives_and_tacticts="Spread Knowledge, Terrorize",
-#     difficulty="14",
-#     thresholds="10/18",
-#     hp="4",
-#     stress="6",
-#     atk="+1",
-#     attack="Maddening Touch",
-#     atk_range="Melee",
-#     damage="2d8 + 1 tech",
-#     experience=["Forgotten Knowledge + 2"],
-#     feats=[
-#         "Momentum - Reaction: When the Allip makes a successful attack against a PC, you gain Fear",
-#         "Whispers of Madness: Mark a Stress to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a Knowledge Reaction roll or take 1d8 + 1 tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.",
-#         "Howling Babble: Mark 2 Stress and choose a point with Far range. All targets within Close range of that point must make a Knowledge Reaction Roll. On a failed save, targets take 2d4 + 3 tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.",
-#     ],
-# )
+from lazydh.statblocks import Adversary, Environment
 
 
-class TestAdvParser:
+class TestAdversaryParsing:
     def setup_method(self):
         self.adv = Adversary(name="test", tier="2", stat_type="Standard")
         self.adv.parse_non_feature_text(
@@ -68,3 +46,107 @@ class TestAdvParser:
 
     def test_combat_assignment_attack_damage(self):
         assert self.adv.damage == "2d8+2 tech"
+
+
+class TestAdversaryIO:
+    def setup_method(self):
+        self.adv = Adversary(
+            name="Allip",
+            tier="2",
+            stat_type="Support",
+            description="A Remnant of Forgotten Knowledge and Forbidden Secrets",
+            motives_and_tacticts="Spread Knowledge, Terrorize",
+            difficulty="14",
+            thresholds="10/18",
+            hp="4",
+            stress="6",
+            attack_mod="+1",
+            attack="Maddening Touch",
+            attack_range="Melee",
+            damage="2d8 + 1 tech",
+            experience=["Forgotten Knowledge +2"],
+            feats=[
+                "Momentum - Reaction: When the Allip makes a successful attack against a PC, you gain Fear.",
+                "Whispers of Madness: Mark a Stress to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a Knowledge Reaction roll or take 1d8 + 1 tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.",
+                "Howling Babble: Mark 2 Stress and choose a point with Far range. All targets within Close range of that point must make a Knowledge Reaction Roll. On a failed save, targets take 2d4 + 3 tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.",
+            ],
+            source="Homebrew",
+        )
+
+    def test_markdown(self):
+        expected = """
+# Allip
+
+***Tier 2 Support***
+*A Remnant of Forgotten Knowledge and Forbidden Secrets*
+**Motives & Tactics:** Spread Knowledge, Terrorize
+
+> **Difficulty:** 14 | **Thresholds:** 10/18 | **HP:** 4 | **Stress:** 6
+> **ATK:** +1 | **Maddening Touch:** Melee | 2d8 + 1 tech
+> **Experience:** Forgotten Knowledge +2
+
+## Features
+
+**Momentum - Reaction:** When the Allip makes a successful attack against a PC, you gain Fear.
+
+**Whispers of Madness:** **Mark a Stress** to whisper forgotten secrets into the mind of all Targets within Close range. Targets must make a **Knowledge** Reaction roll or take **1d8 + 1** tech damage. All Targets are left Vulnerable either until their next turn or they are attacked.
+
+**Howling Babble:** **Mark 2 Stress** and choose a point with Far range. All targets within Close range of that point must make a **Knowledge** Reaction Roll. On a failed save, targets take **2d4 + 3** tech damage and lose a Hope. Targets who succeed take half damage and retain all Hope.
+"""
+        expected = expected.rstrip()
+        assert self.adv.to_markdown(front_matter=False) == expected
+
+    def test_yaml_front_matter(self):
+        expected = """
+---
+type: adversary
+description: A Remnant of Forgotten Knowledge and Forbidden Secrets
+tier: 2
+class: Support
+difficulty: 14
+thresholds: 10/18
+hp: 4
+stress: 6
+attack: Maddening Touch
+attack_range: Melee
+attack_mod: +1
+attack_damage: 2d8 + 1 tech
+experience: Forgotten Knowledge +2
+features:
+    - Momentum
+    - Whispers of Madness
+    - Howling Babble
+source: Homebrew
+---
+"""
+        assert self.adv._to_yaml_front_matter() == expected
+
+
+class TestEnvironmentParsing:
+    def setup_method(self):
+        self.env = Environment(
+            name="The Great Gates of Ardent", tier="2", stat_type="Social"
+        )
+        self.env.parse_non_feature_text(
+            "The Great Gates of Ardent Bar Entrance into the city. Impulses: Protect, "
+            + "Prevent Passage Difficulty: 14. Potential Adversaries: Merchant Baron, "
+            + "Sellsword, Bladed Guard, Head Guard, War Wizard"
+        )
+
+    def test_description_assignment(self):
+        assert (
+            self.env.description
+            == "The Great Gates of Ardent Bar Entrance into the city."
+        )
+
+    def test_impulses_assignment(self):
+        assert self.env.impulses == "Protect, Prevent Passage"
+
+    def test_difficulty_assignment(self):
+        assert self.env.difficulty == "14"
+
+    def test_potential_adversaries(self):
+        assert (
+            self.env.adversaries
+            == "Merchant Baron, Sellsword, Bladed Guard, Head Guard, War Wizard"
+        )

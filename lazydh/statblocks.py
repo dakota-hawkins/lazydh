@@ -121,28 +121,40 @@ class Adversary(Statblock):
             prefix = self._to_yaml_front_matter()
         out = f"""
 # {self.name}
+
 ***Tier {self.tier} {self.stat_type}***
+*{self.description}*
 **Motives & Tactics:** {self.motives_and_tacticts}
 
-> **Difficulty:** {self.difficulty} | **Thresholds:** {self.thresholds} | **HP:** {self.hp} | **Stres:** {self.stress}
-> **ATK:** {self.attack} | **{self.attack_mod}:** {self.attack_range} | {self.damage}
+> **Difficulty:** {self.difficulty} | **Thresholds:** {self.thresholds} | **HP:** {self.hp} | **Stress:** {self.stress}
+> **ATK:** {self.attack_mod} | **{self.attack}:** {self.attack_range} | {self.damage}
 """
         if self.experience is not None:
             if isinstance(self.experience, str):
                 self.experience = [self.experience]
             out += "> **Experience:** " + ", ".join(self.experience) + "\n\n"
         if self.feats is not None:
-            out += "## Features\n" + "\n".join(
+            out += "## Features\n\n" + "\n\n".join(
                 [utils.parse_feature(each) for each in self.feats]
             )
 
-        return prefix + out
+        return prefix + out.rstrip()
+
+    def to_fantasy_statblock(self) -> dict:
+        out = asdict(self)
+        out["atk"] = out.pop("attack_mod")
+        out["range"] = out.pop("attack_range")
+        out["feats"] = []
+        for feat in out.pop("features"):
+            name, text = feat.split(":")
+            out[name.strip()] = text.strip()
+        return out
 
     def _to_yaml_front_matter(self):
         feature_names = ""
         if self.feats is not None:
-            feature_names = "\n\t-" + "\n\t-".join(
-                [f.split(":")[0].split("-")[0] for f in self.feats]
+            feature_names = "\n    - " + "\n    - ".join(
+                [f.split(":")[0].split("-")[0].strip() for f in self.feats]
             )
         experiences = ""
         if self.experience is not None:
@@ -152,6 +164,7 @@ class Adversary(Statblock):
         out = f"""
 ---
 type: adversary
+description: {self.description}
 tier: {self.tier}
 class: {self.stat_type}
 difficulty: {self.difficulty}
@@ -163,11 +176,9 @@ attack_range: {self.attack_range}
 attack_mod: {self.attack_mod}
 attack_damage: {self.damage}
 experience: {experiences}
-features: {feature_names}
-description: {self.description}
+features:{feature_names}
 source: {self.source}
 ---
-
 """
         return out
 
