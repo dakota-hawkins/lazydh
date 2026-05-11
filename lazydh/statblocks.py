@@ -20,6 +20,15 @@ class Statblock:
         name = out.pop("name")
         return {name: out}
 
+    def to_fantasy_statblock(self) -> dict:
+        out = asdict(self)
+        feats = []
+        for feat in out.pop("feats"):
+            name, text = feat.split(":")
+            feats.append({"name": name.strip(), "text": text.strip()})
+        out["feats"] = feats
+        return out
+
     def _search_and_extract(self, text, pattern, value, throw_warning=True):
         match = re.search(pattern, text)
         if match is not None:
@@ -59,37 +68,36 @@ class Environment(Statblock):
             prefix = self._to_yaml_front_matter()
         out = f"""
 # {self.name}
+
 ***Tier {self.tier} {self.stat_type}***
 *{self.description}*
 **Impulses:** {self.impulses}
 
-> **Difficulty:** {self.difficulty}
-"""
-        if self.potential_adversaries is not None:
-            out += f"\n> **Potential Adversaries:** {self.adversaries}"
+> **Difficulty:** {self.difficulty}"""
+
+        if self.adversaries is not None:
+            out += f"\n> **Potential Adversaries:** {self.adversaries}\n"
         if self.feats is not None:
-            out += "## Features\n" + "\n".join(
+            out += "\n## Features\n\n" + "\n\n".join(
                 [utils.parse_feature(each) for each in self.feats]
             )
         return prefix + out
 
+    def to_fantasy_statblock(self) -> dict:
+        out = super().to_fantasy_statblock()
+        out["potential_adversaries"] = out.pop("adversaries")
+        return out
+
     def _to_yaml_front_matter(self):
-        feature_names = ""
-        if self.feats is not None:
-            feature_names = "\n\t-" + "\n\t-".join(
-                [f.split(":")[0].split("-")[0] for f in self.feats]
-            )
         out = f"""
 ---
 type: environment
-tier: {self.tier}
 class: {self.stat_type}
-difficulty: {self.difficulty}
-features: {feature_names}
 description: {self.description}
+tier: {self.tier}
+difficulty: {self.difficulty}
 source: {self.source}
 ---
-
 """
         return out
 
@@ -149,15 +157,10 @@ class Adversary(Statblock):
         return prefix + out.rstrip()
 
     def to_fantasy_statblock(self) -> dict:
-        out = asdict(self)
+        out = super().to_fantasy_statblock()
         out["atk"] = out.pop("attack_mod")
         out["range"] = out.pop("attack_range")
         out["experience"] = self._join_list(out.pop("experience"))
-        feats = []
-        for feat in out.pop("feats"):
-            name, text = feat.split(":")
-            feats.append({"name": name.strip(), "text": text.strip()})
-        out["feats"] = feats
         return out
 
     def _to_yaml_front_matter(self):

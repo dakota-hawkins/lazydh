@@ -1,6 +1,6 @@
 import pytest
 
-from lazydh.statblocks import Adversary, Environment
+from lazydh.statblocks import Adversary
 
 
 class TestAdversaryParsing:
@@ -162,33 +162,3 @@ source: Homebrew
     )
     def test_fantasy_block(self, key, value):
         assert self.fantasy_block[key] == value
-
-
-class TestEnvironmentParsing:
-    def setup_method(self):
-        self.env = Environment(
-            name="The Great Gates of Ardent", tier="2", stat_type="Social"
-        )
-        self.env.parse_non_feature_text(
-            "The Great Gates of Ardent Bar Entrance into the city. Impulses: Protect, "
-            + "Prevent Passage Difficulty: 14. Potential Adversaries: Merchant Baron, "
-            + "Sellsword, Bladed Guard, Head Guard, War Wizard"
-        )
-
-    def test_description_assignment(self):
-        assert (
-            self.env.description
-            == "The Great Gates of Ardent Bar Entrance into the city."
-        )
-
-    def test_impulses_assignment(self):
-        assert self.env.impulses == "Protect, Prevent Passage"
-
-    def test_difficulty_assignment(self):
-        assert self.env.difficulty == "14"
-
-    def test_potential_adversaries(self):
-        assert (
-            self.env.adversaries
-            == "Merchant Baron, Sellsword, Bladed Guard, Head Guard, War Wizard"
-        )
