@@ -34,8 +34,7 @@ class PdfLoader:
     def to_markdown(self, out_dir: str | Path | None = None):
         if out_dir is None:
             out_dir = self.pdf.parent
-        if self._statblocks is None:
-            self.read_statblocks()
+        self._get_statblocks()
         for each in self._statblocks:
             with open(out_dir / f"{each.name}.md", "w") as f:
                 f.write(each.to_markdown())
@@ -43,13 +42,22 @@ class PdfLoader:
     def to_json(self, out_file: str | Path | None = None):
         if out_file is None:
             out_file = self.pdf.with_suffix(".json")
-        if self._statblocks is None:
-            self.read_statblocks()
+        self._get_statblocks()
         write_dict = dict()
         for each in self._statblocks:
             write_dict = write_dict | each.to_dict()
         with open(out_file, "w") as f:
             json.dump(write_dict, f)
+
+    def to_fantasy_statblock(self, out_file: str | Path | None = None):
+        if out_file is None:
+            out_file = self.pdf.with_suffix(".json")
+        self._get_statblocks()
+        entries = []
+        for each in self._statblocks:
+            entries.append(each.to_fantasy_statblock())
+        with open(out_file, "w") as f:
+            json.dump(entries, f)
 
     # ---------------------- Helper Functions - Data Loading --------------------- #
     def _parse_page_range(self, page_range: None | str) -> str:
@@ -178,3 +186,7 @@ class PdfLoader:
     @staticmethod
     def _is_feature_start(line: list[str]) -> str:
         return line[0] == "section.header" and line[1].lower() == "features"
+
+    def _get_statblocks(self) -> None:
+        if self._statblocks is None:
+            self.read_statblocks()
