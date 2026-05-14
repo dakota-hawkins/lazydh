@@ -4,6 +4,21 @@ from dataclasses import asdict, dataclass
 
 from lazydh import utils
 
+_STATBLOCK_TYPES = [
+    "bruiser",
+    "event",
+    "exploration",
+    "horde",
+    "leader",
+    "minion",
+    "skulk",
+    "social",
+    "solo",
+    "standard",
+    "support",
+    "traversal",
+]
+
 
 @dataclass
 class Statblock:
@@ -16,11 +31,13 @@ class Statblock:
     source: str = None
 
     def to_dict(self):
+        """Return dictionary keyed by Statblock name"""
         out = asdict(self)
         name = out.pop("name")
         return {name: out}
 
     def to_fantasy_statblock(self) -> dict:
+        """Return key-value dictionary following fantasy statblocks format expectations"""
         out = asdict(self)
         feats = []
         for feat in out.pop("feats"):
@@ -29,7 +46,26 @@ class Statblock:
         out["feats"] = feats
         return out
 
-    def _search_and_extract(self, text, pattern, value, throw_warning=True):
+    def _search_and_extract(
+        self, text: str, pattern: str, value: str, throw_warning: bool = True
+    ) -> tuple[str, str]:
+        """
+        Search for a regex pattern within a string. Extract the matching substring.
+
+
+        Args:
+            text (str): Full string to extract substring from.
+            pattern (str): Regex pattern of interest
+            value (str): Name of pattern being searched for warning reporting (e.g.
+                "name", "difficulty", etc.).
+            throw_warning (bool, optional): Whether to throw a warning if the pattern
+                substring cannot be found. Defaults to True.
+
+        Returns:
+            tuple[str, str]: Tuple of strings where the first element is the extracted
+                pattern and the second element is the remaining text following
+                substring extraction.
+        """
         match = re.search(pattern, text)
         if match is not None:
             match_text = match.group(0)
@@ -40,15 +76,32 @@ class Statblock:
         return "", text
 
     def _extract_and_strip_prefix(
-        self, text: str, pattern: str, value: str
+        self, text: str, pattern: str, value: str, throw_warning: bool = True
     ) -> tuple[str, str]:
+        """Search for a given string pattern, return match and all proceeding text.
+
+        Args:
+            text (str): Text to search.
+            pattern (str): Regex pattern of interest.
+            value (str): Name of pattern being searched for warning reporting (e.g.
+                "name", "difficulty", etc.).
+            throw_warning (bool, optional): Whether to throw a warning if the pattern
+                substring cannot be found. Defaults to True.
+
+        Returns:
+            tuple[str, str]: Tuple of strings where the first element is the extracted
+                pattern and the second element is the remaining text following the
+                immediate match.
+        """
         match = re.search(pattern, text)
         if match is not None:
             return match.group(0).strip(), text[match.end() :]
-        warnings.warn(f"Could not extract {value} for {self.name}")
+        if throw_warning:
+            warnings.warn(f"Could not extract {value} for {self.name}")
         return "", text
 
     def _join_list(self, list_values: str | list[str] | None) -> str:
+        """Join list elements to a string of comma separated values."""
         value = ""
         if list_values is not None:
             if isinstance(list_values, str):
@@ -63,6 +116,13 @@ class Environment(Statblock):
     adversaries: str = None
 
     def to_markdown(self, front_matter: bool = True) -> str:
+        """
+        Convert Environment statblock to markdown text.
+
+        Args:
+            front_matter (bool, optional). Whether to include .yaml front matter for
+            document tagging in Obsidian. Default is True.
+        """
         prefix = ""
         if front_matter:
             prefix = self._to_yaml_front_matter()
@@ -84,11 +144,13 @@ class Environment(Statblock):
         return prefix + out
 
     def to_fantasy_statblock(self) -> dict:
+        """Convert Environment statblock to Fantasy Stablock consistent dictionary."""
         out = super().to_fantasy_statblock()
         out["potential_adversaries"] = out.pop("adversaries")
         return out
 
     def _to_yaml_front_matter(self):
+        """Convert Environment statblock to yaml front matter."""
         out = f"""
 ---
 type: environment
@@ -102,6 +164,18 @@ source: {self.source}
         return out
 
     def parse_non_feature_text(self, non_feature_text: str) -> dict:
+        """Parse non-feature text from Environment statblock.
+
+        Searches extracted non-feature text to assign the following attributes:
+          - description
+          - impulses
+          - difficulty
+          - potential adversaries
+
+        Args:
+            non_feature_text (str): Text to parse. Should be the text block immediately
+                preceeding the listed features of the statblock
+        """
         self.description, text = self._search_and_extract(
             non_feature_text, r"^.*(?=Impulses\:)", "Description"
         )
@@ -132,6 +206,13 @@ class Adversary(Statblock):
     experience: list[str] | None = None
 
     def to_markdown(self, front_matter=True) -> str:
+        """
+        Convert Adversary statblock to markdown text.
+
+        Args:
+            front_matter (bool, optional). Whether to include .yaml front matter for
+            document tagging in Obsidian. Default is True.
+        """
         prefix = ""
         if front_matter:
             prefix = self._to_yaml_front_matter()
@@ -157,6 +238,7 @@ class Adversary(Statblock):
         return prefix + out.rstrip()
 
     def to_fantasy_statblock(self) -> dict:
+        """Convert Adversary statblock to Fantasy Stablock consistent dictionary."""
         out = super().to_fantasy_statblock()
         out["atk"] = out.pop("attack_mod")
         out["range"] = out.pop("attack_range")
@@ -164,6 +246,7 @@ class Adversary(Statblock):
         return out
 
     def _to_yaml_front_matter(self):
+        """Convert Adversary statblock to yaml front matter."""
         feature_names = ""
         if self.feats is not None:
             feature_names = "\n    - " + "\n    - ".join(
@@ -192,6 +275,25 @@ source: {self.source}
         return out
 
     def parse_non_feature_text(self, non_feature_text: str) -> dict:
+        """Parse non-feature text from Adversary statblock.
+
+        Searches extracted non-feature text to assign the following attributes:
+          - description
+          - motives_and_tactices
+          - experience
+          - difficulty
+          - thresholds
+          - hp
+          - stress
+          - attack_mod
+          - damage
+          - attack
+          - attack_range
+
+        Args:
+            non_feature_text (str): Text to parse. Should be the text block immediately
+                preceeding the listed features of the statblock
+        """
         self.description, text = self._search_and_extract(
             non_feature_text, r"^.*(?=Motives)", "Description"
         )
@@ -210,6 +312,7 @@ source: {self.source}
         self._extract_combat_info(text)
 
     def _extract_combat_info(self, non_feature_text: str) -> str:
+        """Extract Adversary combat stats from non-feature text."""
         self.difficulty, text = self._extract_and_strip_prefix(
             non_feature_text, r"(?<=Difficulty\: )[0-9]+", "Difficulty"
         )
