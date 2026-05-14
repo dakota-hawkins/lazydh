@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pymupdf4llm
 
-from lazydh.statblocks import Adversary, Environment, Statblock
+from lazydh.statblocks import _STATBLOCK_TYPES, Adversary, Environment, Statblock
 
 
 class PdfLoader:
@@ -63,7 +63,7 @@ class PdfLoader:
     def _parse_page_range(self, page_range: None | str) -> str:
         if page_range is None:
             return range(len(self.pdf))
-        page_range = page_range.strip()
+        page_range = re.sub("\s+", "", page_range.strip())
         if len(re.sub("[0-9,-]+", "", page_range) > 0):
             raise ValueError(
                 f"Unsupported characters in supplied page range {page_range}"
@@ -90,7 +90,7 @@ class PdfLoader:
         return self._extract_statblocks(box_text)
 
     @staticmethod
-    def _parse_box(box):
+    def _parse_box(box: dict) -> tuple[str, str]:
         box_type = box["boxclass"]
 
         def parse_span(span):
@@ -106,7 +106,7 @@ class PdfLoader:
         return re.sub(r"Diffi\s+culty", "Difficulty", text)
 
     # ------------------- Helper Functions - Statblock Creation ------------------ #
-    def _extract_statblocks(self, box_text):
+    def _extract_statblocks(self, box_text: tuple[str, str]) -> list[Statblock]:
         statblocks = []
         i = 0
         stop = len(box_text) - 1
@@ -181,7 +181,11 @@ class PdfLoader:
     # ------------------------- Helper Functions - Misc. ------------------------- #
     @staticmethod
     def _is_statblock_start(line_1: str, line_2: str) -> bool:
-        return line_1[0] == "section-header" and line_2[0] == "section-header"
+        return (
+            line_1[0] == "section-header"
+            and line_2[0] == "section-header"
+            and line_2[1].strip().lower() in _STATBLOCK_TYPES
+        )
 
     @staticmethod
     def _is_feature_start(line: list[str]) -> str:
