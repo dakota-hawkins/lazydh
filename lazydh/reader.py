@@ -4,9 +4,11 @@ import re
 import warnings
 from pathlib import Path
 
+import pymupdf
 import pymupdf4llm
 
-from lazydh.statblocks import _STATBLOCK_TYPES, Adversary, Environment, Statblock
+from lazydh import utils
+from lazydh.statblocks import Adversary, Environment, Statblock
 
 
 class PdfLoader:
@@ -106,9 +108,10 @@ class PdfLoader:
     def _parse_page_range(self, page_range: None | str) -> str:
         """Convert page range string to iterator."""
         if page_range is None:
-            return range(len(self.pdf))
+            file = pymupdf.open(self.pdf)
+            return range(file.page_count)
         page_range = re.sub("\s+", "", page_range.strip())
-        if len(re.sub("[0-9,-]+", "", page_range) > 0):
+        if len(re.sub("[0-9,-]+", "", page_range)) > 0:
             raise ValueError(
                 f"Unsupported characters in supplied page range {page_range}"
             )
@@ -116,7 +119,8 @@ class PdfLoader:
         # assume page range in 1 index, convert to zero index
         def to_iter(x):
             if "-" in x:
-                return range(*[int(i) - 1 for i in x.split("-")])
+                start, stop = [int(i) - 1 for i in x.split("-")]
+                return range(start, stop + 1)  # inclusive range
             return range(int(x) - 1, int(x))
 
         return itertools.chain(*(to_iter(x) for x in page_range.split(",")))
@@ -131,13 +135,14 @@ class PdfLoader:
         def of_interest(box):
             return box["boxclass"] not in ["page-footer", "page-header"]
 
-        box_text = [
-            PdfLoader._parse_box(box) for box in page["boxes"] if of_interest(box)
-        ]
+        box_text = sorted(
+            [PdfLoader._parse_box(box) for box in page["boxes"] if of_interest(box)],
+            key=lambda x: (x[2] > page["width"] // 2, x[3]),
+        )
         return self._extract_statblocks(box_text)
 
     @staticmethod
-    def _parse_box(box: dict) -> tuple[str, str]:
+    def _parse_box(box: dict) -> tuple[str, str, float, float]:
         """Extract boxclass and related text for all text found in a text box."""
         box_type = box["boxclass"]
 
@@ -147,24 +152,24 @@ class PdfLoader:
         text = PdfLoader._perform_common_fixes(
             " ".join([parse_span(x["spans"]) for x in box["textlines"]])
         )
-        return (box_type, text)
+        return (box_type, text, box["x0"], box["y1"])
 
     @staticmethod
     def _perform_common_fixes(text):
-        """Perform quick replacements for common parsing errors."""
-        return re.sub(r"Diffi\s+culty", "Difficulty", text)
+        """Perform quick replacements for common parsing errors that are deleterious to performance."""
+        return re.sub(r"Diffi\s+culty", "Difficulty", text).replace("−", "-")
 
     # ------------------- Helper Functions - Statblock Creation ------------------ #
     def _extract_statblocks(self, box_text: list[tuple[str, str]]) -> list[Statblock]:
         """Extract statblocks from a list of extracted text"""
         statblocks = []
         i = 0
-        stop = len(box_text) - 1
+        # - 2 to stop at line (n - 1) in zero index
+        stop = len(box_text) - 2
 
         while i < stop:
-            while (
-                not PdfLoader._is_statblock_start(box_text[i], box_text[i + 1])
-                and i < stop
+            while i < stop and not PdfLoader._is_statblock_start(
+                box_text[i], box_text[i + 1]
             ):
                 i += 1
             if i >= stop:
@@ -193,7 +198,7 @@ class PdfLoader:
             tier = re.sub("[A-Za-z\s]", "", match_tier.group(0))
         else:
             warnings.warn(f"Could not assign Tier to {name}")
-        stat_type = box_text[1][1].split(" ")[-1].strip().title()
+        stat_type = utils.extract_statblock_type(box_text[1][1])
 
         start += 2
         non_feature_text = ""
@@ -202,11 +207,14 @@ class PdfLoader:
             start += 1
 
         feature_text = []
-        if box_text[start][1].lower() == "features":
-            start += 1
-            while start < len(box_text) and box_text[start][0] != "section-header":
-                feature_text.append(re.sub("\s+", " ", box_text[start][1]).strip())
+        if start < len(box_text):
+            if box_text[start][1].lower() == "features":
                 start += 1
+                while start < len(box_text) and box_text[start][0] != "section-header":
+                    feature_text.append(re.sub("\s+", " ", box_text[start][1]).strip())
+                    start += 1
+        else:
+            warnings.warn(f"No features found for {name}")
         statblock = self._init_statblock(
             name, tier, stat_type, non_feature_text, feature_text
         )
@@ -282,7 +290,7 @@ class PdfLoader:
         if (
             line_1[0] == "section-header"
             and line_2[0] == "section-header"
-            and text in _STATBLOCK_TYPES
+            and utils._STATBLOCK_REGEX.search(text)
         ):
             return True
         elif line_1[0] == "section-header" and line_2[0] == "section-header":

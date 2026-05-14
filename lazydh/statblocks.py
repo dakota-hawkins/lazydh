@@ -4,21 +4,6 @@ from dataclasses import asdict, dataclass
 
 from lazydh import utils
 
-_STATBLOCK_TYPES = [
-    "bruiser",
-    "event",
-    "exploration",
-    "horde",
-    "leader",
-    "minion",
-    "skulk",
-    "social",
-    "solo",
-    "standard",
-    "support",
-    "traversal",
-]
-
 
 @dataclass
 class Statblock:

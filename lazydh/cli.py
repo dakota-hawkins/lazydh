@@ -51,6 +51,7 @@ def main(
         raise FileExistsError(f"Cannot find {pdf}")
     if out_dir is None:
         out_dir = pdf.parent
+    out_dir = Path(out_dir)
     file_reader = PdfLoader(pdf=pdf, page_range=pages, source=source)
 
     if output == "markdown":

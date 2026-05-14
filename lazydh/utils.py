@@ -2,6 +2,36 @@ import re
 
 DICE_REGEX = r"(\d+)?d(\d+)(\s*[\+\-]\s*\d+)"
 
+_STATBLOCK_TYPES = [
+    "bruiser",
+    "event",
+    "exploration",
+    "horde",
+    "leader",
+    "minion",
+    "skulk",
+    "social",
+    "solo",
+    "standard",
+    "support",
+    "traversal",
+]
+_STATBLOCK_REGEX = re.compile("|".join(f"({x})" for x in _STATBLOCK_TYPES))
+
+
+def extract_statblock_type(text):
+    text = text.lower()
+    matched = _STATBLOCK_REGEX.search(text)
+    if matched is not None:
+        matched_text = matched.group(0).strip().title()
+        if "Horde" not in matched_text:
+            return matched_text
+        hp = re.search(r"\([0-9]+\/hp\)", text[matched.end() :])
+        if hp is not None:
+            return f"{matched_text} {hp.group(0).upper()}"
+        return matched_text
+    return None
+
 
 def extract_delimited_pattern(
     line, feature_name, regex_pattern="[0-9]+", delimiter=": "

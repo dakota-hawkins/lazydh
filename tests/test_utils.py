@@ -54,3 +54,24 @@ def test_markdown_bolding(text, bolded):
 )
 def test_markdown_feature_parse(text, bolded):
     assert utils.parse_feature(text) == bolded
+
+
+@pytest.mark.parametrize(
+    "text, stat_type",
+    [
+        ("Title Support", "Support"),
+        ("expeditious Event", "Event"),
+        ("Name Bruiser", "Bruiser"),
+        ("Lovely Solo", "Solo"),
+        ("baby Leader ", "Leader"),
+        ("hell of an exploration", "Exploration"),
+        ("minion", "Minion"),
+        ("sneaky skulk", "Skulk"),
+        ("terrible traversal", "Traversal"),
+        ("stupendous standard", "Standard"),
+        (" basic horde", "Horde"),
+        ("Numbered Horde (4/hp)", "Horde (4/HP)"),
+    ],
+)
+def test_statblock_type_parsing(text, stat_type):
+    assert utils.extract_statblock_type(text) == stat_type
