@@ -4,8 +4,12 @@ import typer
 
 from lazydh.reader import PdfLoader
 
+app = typer.Typer()
 
-def validate_output(output: str) -> str:
+
+def validate_output(output: str | None) -> str:
+    if output is None:
+        return "markdown"
     output = output.lower()
     _supported_types = ["markdown", "json", "fantasy_statblock"]
     if output not in _supported_types:
@@ -15,6 +19,7 @@ def validate_output(output: str) -> str:
     return output
 
 
+@app.command()
 def main(
     pdf: str = typer.Argument(
         ...,
@@ -22,6 +27,7 @@ def main(
     ),
     output: str = typer.Option(
         "markdown",
+        callback=validate_output,
         help="Output format: markdown, json, or fantasy_statblock are supported.",
     ),
     pages: str = typer.Option(
@@ -40,7 +46,6 @@ def main(
     """
     Convert Daggerheart-compatible stat blocks from PDF to text-based formats.
     """
-    output = validate_output(output)
     pdf = Path(pdf)
     if not pdf.exists():
         raise FileExistsError(f"Cannot find {pdf}")
@@ -57,4 +62,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()

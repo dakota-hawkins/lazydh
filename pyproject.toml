@@ -9,6 +9,8 @@ dependencies = [
     "pymupdf>=1.27.2.3",
     "typer>=0.25.1",
 ]
+[project.scripts]
+lazydh = "lazydh.cli:app"
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
