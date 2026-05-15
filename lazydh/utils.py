@@ -1,6 +1,8 @@
 import re
 
-DICE_REGEX = r"(\d+)?d(\d+)(\s*[\+\-]\s*\d+)"
+DICE_REGEX = r"(\d*)d(\d+)(?:\s*([+\-*/])\s*(\d+))?"
+TYPE_REGEX = r"(\s)?(phy|mag|tech)?"
+DAMAGE_REGEX = f"({DICE_REGEX}{TYPE_REGEX})|(" + r"(\s)?[\+\-]\d+" + f"{TYPE_REGEX})"
 
 _STATBLOCK_TYPES = [
     "bruiser",
@@ -9,6 +11,7 @@ _STATBLOCK_TYPES = [
     "horde",
     "leader",
     "minion",
+    "ranged",
     "skulk",
     "social",
     "solo",
@@ -74,7 +77,7 @@ def highlight_text(text):
         re.compile("([sS]pend a [fF]ear)|([sS]pend [0-9]+ [fF]ear)"),
         re.compile("([mM]ark a [sS]tress)|([mM]ark [0-9]+ [sS]tress)"),
         re.compile(r"(Agility)|(Finesse)|(Instinct)|(Knowledge)|(Presence)|(Strength)"),
-        re.compile(DICE_REGEX + r"?"),
+        re.compile(DICE_REGEX),
     ]
     for each in highlight_patterns:
         regex_match = each.finditer(text)

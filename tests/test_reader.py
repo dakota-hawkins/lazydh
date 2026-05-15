@@ -31,7 +31,7 @@ class TestDataParsing:
             statblock, __ = self.reader._parse_boxtext(self.data, 0)
 
     def test_horde_assignment(self):
-        with warnings.catch_warnings():
+        with warnings.catch_warnings(record=True):
             statblock, __ = self.reader._parse_boxtext(self.data, 0)
             assert statblock.stat_type == "Horde (3/HP)"
 

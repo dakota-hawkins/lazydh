@@ -65,6 +65,7 @@ def test_markdown_feature_parse(text, bolded):
         ("Lovely Solo", "Solo"),
         ("baby Leader ", "Leader"),
         ("hell of an exploration", "Exploration"),
+        ("rangid ranged", "Ranged"),
         ("minion", "Minion"),
         ("sneaky skulk", "Skulk"),
         ("terrible traversal", "Traversal"),

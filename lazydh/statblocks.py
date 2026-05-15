@@ -238,12 +238,17 @@ class Adversary(Statblock):
                 [f.split(":")[0].split("-")[0].strip() for f in self.feats]
             )
         experiences = self._join_list(self.experience)
+        # hordes can be either Horde (X/HP) or just Horde -- for front matter, ensure Horde
+        if self.stat_type is not None and len(self.stat_type) > 0:
+            stat_type = re.search("^[A-Za-z]+", self.stat_type).group(0)
+        else:
+            stat_type = self.stat_type
         out = f"""
 ---
 type: adversary
 description: {self.description}
 tier: {self.tier}
-class: {self.stat_type}
+class: {stat_type}
 difficulty: {self.difficulty}
 thresholds: {self.thresholds}
 hp: {self.hp}

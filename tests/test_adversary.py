@@ -1,5 +1,6 @@
 import pytest
 
+from lazydh import utils
 from lazydh.statblocks import Adversary
 
 
@@ -162,3 +163,36 @@ source: Homebrew
     )
     def test_fantasy_block(self, key, value):
         assert self.fantasy_block[key] == value
+
+
+@pytest.mark.parametrize(
+    "text, value",
+    [
+        ("| Smack: Melee | 3d12 phy", "3d12 phy"),
+        ("| Smack: Melee | 3d12 mag", "3d12 mag"),
+        ("| Smack: Melee | 3d12 tech", "3d12 tech"),
+        ("| Smack: Melee | 3d12 + 1 tech", "3d12 + 1 tech"),
+        ("| Smack: Melee | 3d12 - 1 tech", "3d12 - 1 tech"),
+        ("| Smack: Melee | 3d12+1 tech", "3d12+1 tech"),
+        ("| Smack: Melee | 3d12-1 tech", "3d12-1 tech"),
+        ("| Smack: Melee | d8 phy", "d8 phy"),
+        ("| Smack: Melee | d8 mag", "d8 mag"),
+        ("| Smack: Melee | d8 tech", "d8 tech"),
+        ("| Smack: Melee | d8 + 1 tech", "d8 + 1 tech"),
+        ("| Smack: Melee | d8 - 1 tech", "d8 - 1 tech"),
+        ("| Smack: Melee | d8+1 tech", "d8+1 tech"),
+        ("| Smack: Melee | d8-1 tech", "d8-1 tech"),
+        ("| Smack: Nibble | +3 phy", "+3 phy"),
+    ],
+)
+def test_damage_parsing(text, value):
+    assert (
+        Adversary()._search_and_extract(
+            text,
+            # utils.DICE_REGEX + r"(\s)?(phy|mag|tech|)?",
+            utils.DAMAGE_REGEX,
+            "Damage",
+            throw_warning=False,
+        )[0]
+        == value
+    )
