@@ -25,11 +25,32 @@ class Statblock:
         """Return key-value dictionary following fantasy statblocks format expectations"""
         out = asdict(self)
         feats = []
-        for feat in out.pop("feats"):
-            name, text = feat.split(":")
-            feats.append({"name": name.strip(), "text": text.strip()})
+        for name, desc in out.pop("feats"):
+            feats.append({"name": name.replace(":", "").strip(), "text": desc.strip()})
         out["feats"] = feats
         return out
+
+    def parse_feature_text(self, feature_text: str):
+        matches = list(re.finditer(utils.FEATURE_REGEX, feature_text))
+        if len(matches) != 0:
+            desc_stops = [x.start() for x in matches[1:]] + [len(feature_text)]
+            features = []
+            for each, stop in zip(matches, desc_stops):
+                features.append(
+                    (
+                        each.group(0).strip().replace(":", ""),
+                        feature_text[each.end() : stop].strip(" "),
+                    )
+                )
+            self.feats = features
+        else:
+            warnings.warn(f"Could not find features for {self.name}")
+
+    def _features_to_markdown(self):
+        text = "## Features\n\n" + "\n\n".join(
+            [f"**{name}:** {utils.highlight_text(desc)}" for name, desc in self.feats]
+        )
+        return text
 
     def _search_and_extract(
         self, text: str, pattern: str, value: str, throw_warning: bool = True
@@ -121,11 +142,9 @@ class Environment(Statblock):
 > **Difficulty:** {self.difficulty}"""
 
         if self.adversaries is not None:
-            out += f"\n> **Potential Adversaries:** {self.adversaries}\n"
+            out += f"\n> **Potential Adversaries:** {self.adversaries}\n\n"
         if self.feats is not None:
-            out += "\n## Features\n\n" + "\n\n".join(
-                [utils.parse_feature(each) for each in self.feats]
-            )
+            out += self._features_to_markdown()
         return prefix + out
 
     def to_fantasy_statblock(self) -> dict:
@@ -216,9 +235,7 @@ class Adversary(Statblock):
                 self.experience = [self.experience]
             out += "> **Experience:** " + ", ".join(self.experience) + "\n\n"
         if self.feats is not None:
-            out += "## Features\n\n" + "\n\n".join(
-                [utils.parse_feature(each) for each in self.feats]
-            )
+            out += self._features_to_markdown()
 
         return prefix + out.rstrip()
 
@@ -235,7 +252,7 @@ class Adversary(Statblock):
         feature_names = ""
         if self.feats is not None:
             feature_names = "\n    - " + "\n    - ".join(
-                [f.split(":")[0].split("-")[0].strip() for f in self.feats]
+                ["-".join(f[0].split("-")[:-1]).strip() for f in self.feats]
             )
         experiences = self._join_list(self.experience)
         # hordes can be either Horde (X/HP) or just Horde -- for front matter, ensure Horde

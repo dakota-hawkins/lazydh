@@ -34,13 +34,17 @@ def main(
         None,
         help="Comma separated page numbers to parse (e.g., '1,3-6,14'). All pages by default.",
     ),
-    out_dir: str = typer.Option(
+    outdir: str = typer.Option(
         None,
         help="Output directory for converted statblocks. Defaults to the PDF's folder.",
     ),
     source: str = typer.Option(
         None,
         help="Source of PDF. Added to all statblock entries. Defaults to PDF file name.",
+    ),
+    frontmatter: bool = typer.Option(
+        True,
+        help="Whether to include .yaml front matter when writing markdown files. Default is True.",
     ),
 ):
     """
@@ -49,17 +53,17 @@ def main(
     pdf = Path(pdf)
     if not pdf.exists():
         raise FileExistsError(f"Cannot find {pdf}")
-    if out_dir is None:
-        out_dir = pdf.parent
-    out_dir = Path(out_dir)
+    if outdir is None:
+        outdir = pdf.parent
+    outdir = Path(outdir)
     file_reader = PdfLoader(pdf=pdf, page_range=pages, source=source)
 
     if output == "markdown":
-        file_reader.to_markdown(out_dir)
+        file_reader.to_markdown(outdir, frontmatter=frontmatter)
     elif output == "json":
-        file_reader.to_json(out_dir / pdf.with_suffix(".json").name)
+        file_reader.to_json(outdir / pdf.with_suffix(".json").name)
     else:
-        file_reader.to_fantasy_statblock(out_dir / pdf.with_suffix(".json").name)
+        file_reader.to_fantasy_statblock(outdir / pdf.with_suffix(".json").name)
 
 
 if __name__ == "__main__":

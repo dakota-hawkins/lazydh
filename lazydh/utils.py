@@ -3,7 +3,10 @@ import re
 DICE_REGEX = r"(\d*)d(\d+)(?:\s*([+\-*/])\s*(\d+))?"
 TYPE_REGEX = r"(\s)?(phy|mag|tech)?"
 DAMAGE_REGEX = f"({DICE_REGEX}{TYPE_REGEX})|(" + r"(\s)?[\+\-]\d+" + f"{TYPE_REGEX})"
-
+FEATURE_REGEX = (
+    r"([A-Za-z0-9\-\(\) ]+\s*-\s*(?:Passive|Reaction|Action):)" + "|"
+    f"([Hh]orde \({DICE_REGEX}\)+\s*-\s*Passive:)"
+)
 _STATBLOCK_TYPES = [
     "bruiser",
     "event",
@@ -52,10 +55,6 @@ def extract_experiences(line):
     return None
 
 
-def extract_features(lines, cur_line):
-    pass
-
-
 def parse_experiences(experiences):
     out = ""
     if experiences is not None:
@@ -64,12 +63,6 @@ def parse_experiences(experiences):
             label = "**Experiences:**"
         out += f"\n{label}"
     return out
-
-
-def parse_feature(feature):
-    feature_split = feature.split(":")
-    name, desc = feature_split[0], "".join(feature_split[1:]).strip()
-    return f"**{name}:** {highlight_text(desc)}"
 
 
 def highlight_text(text):

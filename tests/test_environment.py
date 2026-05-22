@@ -43,9 +43,18 @@ class TestAdversaryIO:
             impulses="Protect, Prevent Passage",
             difficulty="14",
             feats=[
-                "Feature 1 - Passive: To pass into the city, characters must be a certified citizen of Ardent or possess a A Writ of Good Commerce. Characters who do not meet either criteria may try sneaking through, bribing guards, or presenting falsified information to gain passage. All checks to eschew proper methods of entry must pass a DC 17 check.",
-                "Feature 2 - Action: A nearby merchant barred from entry solicits the party to ferry goods, items, or information into the city. What is being ferried, and how dangerous is it to smuggle it across the gates?",
-                "Feature 3 - Action: Spend a Fear to narrate the sudden corruption of labor Remnant. Use the Fury Infected Bear Remnant stat block",
+                (
+                    "Feature 1 - Passive",
+                    "To pass into the city, characters must be a certified citizen of Ardent or possess a A Writ of Good Commerce. Characters who do not meet either criteria may try sneaking through, bribing guards, or presenting falsified information to gain passage. All checks to eschew proper methods of entry must pass a DC 17 check.",
+                ),
+                (
+                    "Feature 2 - Action",
+                    "A nearby merchant barred from entry solicits the party to ferry goods, items, or information into the city. What is being ferried, and how dangerous is it to smuggle it across the gates?",
+                ),
+                (
+                    "Feature 3 - Action",
+                    "Spend a Fear to narrate the sudden corruption of labor Remnant. Use the Fury Infected Bear Remnant stat block",
+                ),
             ],
             source="Homebrew",
             adversaries="Merchant Baron, Sellsword, Bladed Guard, Head Guard, War Wizard",

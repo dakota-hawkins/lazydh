@@ -49,7 +49,7 @@ class PdfLoader:
             statblocks.append(self._parse_page(data["pages"][i]))
         self._statblocks = list(itertools.chain(*statblocks))
 
-    def to_markdown(self, out_dir: str | Path | None = None):
+    def to_markdown(self, out_dir: str | Path | None = None, frontmatter: bool = True):
         """Write all PDF statblocks to markdown.
 
         Writes all discovered statblocks to markdown. A different file is written for
@@ -57,6 +57,7 @@ class PdfLoader:
 
         Args:
             out_dir (str | Path | None, optional): Where the write markdown files.
+            frontmatter (bool): Whether to include .yaml front matter. Default is True.
             Defaults to None, and the source directory is used.
         """
         if out_dir is None:
@@ -64,7 +65,7 @@ class PdfLoader:
         self._get_statblocks()
         for each in self._statblocks:
             with open(out_dir / f"{each.name}.md", "w") as f:
-                f.write(each.to_markdown())
+                f.write(each.to_markdown(frontmatter))
 
     def to_json(self, out_file: str | Path | None = None):
         """Write all PDF statblocks to json .
@@ -135,6 +136,7 @@ class PdfLoader:
         def of_interest(box):
             return box["boxclass"] not in ["page-footer", "page-header"]
 
+        # separate into left and right columns, then order by height
         box_text = sorted(
             [PdfLoader._parse_box(box) for box in page["boxes"] if of_interest(box)],
             key=lambda x: (x[2] > page["width"] // 2, x[3]),
@@ -168,9 +170,7 @@ class PdfLoader:
         stop = len(box_text) - 2
 
         while i < stop:
-            while i < stop and not PdfLoader._is_statblock_start(
-                box_text[i], box_text[i + 1]
-            ):
+            while i < stop and not PdfLoader._is_statblock_start(box_text, i):
                 i += 1
             if i >= stop:
                 break
@@ -198,22 +198,29 @@ class PdfLoader:
             tier = re.sub("[A-Za-z\s]", "", match_tier.group(0))
         else:
             warnings.warn(f"Could not assign Tier to {name}")
-        stat_type = utils.extract_statblock_type(box_text[1][1])
+        stat_type = utils.extract_statblock_type(box_text[start + 1][1])
 
         start += 2
         non_feature_text = ""
-        while start < len(box_text) and box_text[start][0] != "section-header":
+        while start < len(box_text) and not PdfLoader._is_feature_start(
+            box_text[start]
+        ):
             non_feature_text += box_text[start][1] + " "
             start += 1
 
-        feature_text = []
+        feature_text = ""
         if start < len(box_text):
-            if box_text[start][1].lower() == "features":
+            if PdfLoader._is_feature_start(box_text[start]):
                 start += 1
-                while start < len(box_text) and box_text[start][0] != "section-header":
-                    feature_text.append(re.sub("\s+", " ", box_text[start][1]).strip())
+                while start < len(box_text) and not PdfLoader._is_statblock_start(
+                    box_text, start
+                ):
+                    cleaned = re.sub("\s+", " ", box_text[start][1]).strip()
+                    if box_text[start][0] == "list-item":
+                        cleaned = "\n    " + cleaned
+                    feature_text += cleaned
                     start += 1
-        else:
+        if len(feature_text) == 0:
             warnings.warn(f"No features found for {name}")
         statblock = self._init_statblock(
             name, tier, stat_type, non_feature_text, feature_text
@@ -245,7 +252,6 @@ class PdfLoader:
                 name=name,
                 tier=tier,
                 stat_type=stat_type,
-                feats=feature_text,
                 source=self.source,
             )
         else:
@@ -253,15 +259,15 @@ class PdfLoader:
                 name=name,
                 tier=tier,
                 stat_type=stat_type,
-                feats=feature_text,
                 source=self.source,
             )
         statblock.parse_non_feature_text(non_feature_text)
+        statblock.parse_feature_text(feature_text)
         return statblock
 
     # ------------------------- Helper Functions - Misc. ------------------------- #
     @staticmethod
-    def _is_statblock_start(line_1: tuple[str, str], line_2: tuple[str, str]) -> bool:
+    def _is_statblock_start(box_text: list[tuple], line_idx: int) -> bool:
         """Determine if the current line indicates the start of a statblock.
 
         A given line is assumed to start a statblock if both lines are section headers,
@@ -272,6 +278,7 @@ class PdfLoader:
             - horde
             - leader
             - minion
+            - ranged
             - skulk
             - social
             - solo
@@ -286,6 +293,10 @@ class PdfLoader:
         Returns:
             bool: Whether `line_1` indicates the start of a new statblock.
         """
+        try:
+            line_1, line_2 = box_text[line_idx], box_text[line_idx + 1]
+        except IndexError:
+            return False
         text = line_2[1].strip().lower()
         if (
             line_1[0] == "section-header"
@@ -303,7 +314,7 @@ class PdfLoader:
     @staticmethod
     def _is_feature_start(line: list[str]) -> str:
         """Determine if the current line indicates the start of the feature list."""
-        return line[0] == "section.header" and line[1].lower() == "features"
+        return line[0] == "section-header" and line[1].lower() == "features"
 
     def _get_statblocks(self) -> None:
         """Check if statblocks have been loaded, load otherwise."""
