@@ -1,6 +1,5 @@
-import re
-
 import pytest
+import regex as re
 
 from lazydh import utils
 

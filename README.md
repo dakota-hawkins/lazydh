@@ -1,6 +1,6 @@
 # lazydh
 
-Convert `.pdfs` of Daggerheart statblocks to your favorite text-based storage format. `lazydh` converts pdf files of Daggerheart Adversary and Environment statblocks to text-based formats to meet GMs where they prep.
+`lazydh` converts pdf files of Daggerheart Adversary and Environment statblocks to text-based formats to meet GMs where they prep.
 
 The currently supported output formats are:
 

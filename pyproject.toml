@@ -8,6 +8,7 @@ dependencies = [
     "pymupdf4llm>=1.27.2.3",
     "pymupdf>=1.27.2.3",
     "typer>=0.25.1",
+    "regex>=2026.5.9",
 ]
 [project.scripts]
 lazydh = "lazydh.cli:app"

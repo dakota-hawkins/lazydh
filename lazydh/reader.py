@@ -1,11 +1,11 @@
 import itertools
 import json
-import re
 import warnings
 from pathlib import Path
 
 import pymupdf
 import pymupdf4llm
+import regex as re
 
 from lazydh import utils
 from lazydh.statblocks import Adversary, Environment, Statblock
@@ -34,7 +34,7 @@ class PdfLoader:
         if source is None:
             source = self.pdf.name
         self.source = source
-        self._statblocks = None
+        self.statblocks_ = None
 
     # ----------------------------- Public Functions ----------------------------- #
     def read_statblocks(self):
@@ -47,7 +47,7 @@ class PdfLoader:
         statblocks = []
         for i in self.page_ranges:
             statblocks.append(self._parse_page(data["pages"][i]))
-        self._statblocks = list(itertools.chain(*statblocks))
+        self.statblocks_ = list(itertools.chain(*statblocks))
 
     def to_markdown(self, out_dir: str | Path | None = None, frontmatter: bool = True):
         """Write all PDF statblocks to markdown.
@@ -159,7 +159,11 @@ class PdfLoader:
     @staticmethod
     def _perform_common_fixes(text):
         """Perform quick replacements for common parsing errors that are deleterious to performance."""
-        return re.sub(r"Diffi\s+culty", "Difficulty", text).replace("−", "-")
+
+        patterns = [(r"\p{Dash}", "-"), (r"Diffi\s+culty", "Difficulty")]
+        for pat, rep in patterns:
+            text = re.sub(pat, rep, text)
+        return text
 
     # ------------------- Helper Functions - Statblock Creation ------------------ #
     def _extract_statblocks(self, box_text: list[tuple[str, str]]) -> list[Statblock]:
@@ -304,11 +308,11 @@ class PdfLoader:
             and utils._STATBLOCK_REGEX.search(text)
         ):
             return True
-        elif line_1[0] == "section-header" and line_2[0] == "section-header":
-            warnings.warn(
-                f"Likely statblock start, but {text} does not match known types"
-            )
-            return False
+        # elif line_1[0] == "section-header" and line_2[0] == "section-header":
+        #     warnings.warn(
+        #         f'Likely statblock start, but "{text}" does not match known types'
+        #     )
+        #     return False
         return False
 
     @staticmethod
@@ -318,5 +322,5 @@ class PdfLoader:
 
     def _get_statblocks(self) -> None:
         """Check if statblocks have been loaded, load otherwise."""
-        if self._statblocks is None:
+        if self.statblocks_ is None:
             self.read_statblocks()

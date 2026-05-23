@@ -1,6 +1,7 @@
-import re
 import warnings
 from dataclasses import asdict, dataclass
+
+import regex as re
 
 from lazydh import utils
 

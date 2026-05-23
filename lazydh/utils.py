@@ -1,4 +1,4 @@
-import re
+import regex as re
 
 DICE_REGEX = r"(\d*)d(\d+)(?:\s*([+\-*/])\s*(\d+))?"
 TYPE_REGEX = r"(\s)?(phy|mag|tech)?"
