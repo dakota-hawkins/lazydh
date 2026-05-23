@@ -1,3 +1,4 @@
+import logging
 import warnings
 from dataclasses import asdict, dataclass
 
@@ -45,7 +46,7 @@ class Statblock:
                 )
             self.feats = features
         else:
-            warnings.warn(f"Could not find features for {self.name}")
+            logging.warning(f"Could not find features for {self.name}")
 
     def _features_to_markdown(self):
         text = "## Features\n\n" + "\n\n".join(
@@ -79,7 +80,7 @@ class Statblock:
             remainder = text.replace(match_text, "")
             return re.sub(r"\s+", " ", match_text.strip()), remainder
         elif throw_warning:
-            warnings.warn(f"Could not parse {value} for Adversary: {self.name}")
+            logging.warning(f"Could not parse {value} for Adversary: {self.name}")
         return "", text
 
     def _extract_and_strip_prefix(
@@ -104,7 +105,7 @@ class Statblock:
         if match is not None:
             return match.group(0).strip(), text[match.end() :]
         if throw_warning:
-            warnings.warn(f"Could not extract {value} for {self.name}")
+            logging.warning(f"Could not extract {value} for {self.name}")
         return "", text
 
     def _join_list(self, list_values: str | list[str] | None) -> str:
@@ -322,17 +323,18 @@ source: {self.source}
     def _extract_combat_info(self, non_feature_text: str) -> str:
         """Extract Adversary combat stats from non-feature text."""
         self.difficulty, text = self._extract_and_strip_prefix(
-            non_feature_text, r"(?<=Difficulty\: )[0-9]+", "Difficulty"
+            non_feature_text, r"(?<=Difficulty\:)[0-9\s]+", "Difficulty"
         )
         self.thresholds, text = self._extract_and_strip_prefix(
-            text, r"(?<=Thresholds\: )[0-9]+/[0-9]+", "Thresholds"
+            text, r"(?<=Thresholds\:)[0-9\s]+/[0-9\s]+", "Thresholds"
         )
-        self.hp, text = self._extract_and_strip_prefix(text, r"(?<=HP\: )[0-9]+", "HP")
+        self.thresholds = re.sub("\s+", "", self.thresholds)
+        self.hp, text = self._extract_and_strip_prefix(text, r"(?<=HP\:)[\s0-9]+", "HP")
         self.stress, text = self._extract_and_strip_prefix(
-            text, r"(?<=Stress\: )[0-9]+", "Stress"
+            text, r"(?<=Stress\:)[0-9\s]+", "Stress"
         )
         self.attack_mod, text = self._extract_and_strip_prefix(
-            text, r"(?<=ATK\: )[\+\-][0-9]+", "ATK"
+            text, r"(?<=ATK\:)[\s\+\-0-9]+", "ATK"
         )
         self.damage, text = self._search_and_extract(
             text, utils.DICE_REGEX + r"\s*(phy|mag|tech|)?", "Damage"
@@ -340,7 +342,7 @@ source: {self.source}
         attack_regex = r"[A-Za-z\s]+: (Melee|Close|Very Close|Far|Very Far)"
         text, __ = self._search_and_extract(text, attack_regex, "Attack Name and Range")
         if ":" not in text:
-            warnings.warn(f"Cannot parse attack name and range for {self.name}")
+            logging.warning(f"Cannot parse attack name and range for {self.name}")
         else:
             stripped = [x.strip() for x in text.split(":")]
             self.attack, self.attack_range = stripped[0], stripped[1]

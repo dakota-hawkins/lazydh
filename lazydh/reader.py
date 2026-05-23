@@ -1,5 +1,6 @@
 import itertools
 import json
+import logging
 import warnings
 from pathlib import Path
 
@@ -41,11 +42,13 @@ class PdfLoader:
         """
         Read statblocks from the pdf using OCR.
 
-        A list of all statblocks is assigned to the `self._statblocks` variable.
+        A list of all statblocks is assigned to the `self.statblocks_` variable.
         """
         data = self._get_data()
         statblocks = []
-        for i in self.page_ranges:
+        # enumerate is necessary since page number and index may not align if certain
+        # pages were skipped
+        for i, p in enumerate(self.page_ranges):
             statblocks.append(self._parse_page(data["pages"][i]))
         self.statblocks_ = list(itertools.chain(*statblocks))
 
@@ -63,7 +66,7 @@ class PdfLoader:
         if out_dir is None:
             out_dir = self.pdf.parent
         self._get_statblocks()
-        for each in self._statblocks:
+        for each in self.statblocks_:
             with open(out_dir / f"{each.name}.md", "w") as f:
                 f.write(each.to_markdown(frontmatter))
 
@@ -81,7 +84,7 @@ class PdfLoader:
             out_file = self.pdf.with_suffix(".json")
         self._get_statblocks()
         write_dict = dict()
-        for each in self._statblocks:
+        for each in self.statblocks_:
             write_dict = write_dict | each.to_dict()
         with open(out_file, "w") as f:
             json.dump(write_dict, f)
@@ -100,7 +103,7 @@ class PdfLoader:
             out_file = self.pdf.with_suffix(".json")
         self._get_statblocks()
         entries = []
-        for each in self._statblocks:
+        for each in self.statblocks_:
             entries.append(each.to_fantasy_statblock())
         with open(out_file, "w") as f:
             json.dump(entries, f)
@@ -124,11 +127,18 @@ class PdfLoader:
                 return range(start, stop + 1)  # inclusive range
             return range(int(x) - 1, int(x))
 
-        return itertools.chain(*(to_iter(x) for x in page_range.split(",")))
+        # first convert to set incase of overlapping ranges, then to sorted list for
+        # `pymupdf`
+        page_list = sorted(
+            list(set(itertools.chain(*(to_iter(x) for x in page_range.split(",")))))
+        )
+        return page_list
 
     def _get_data(self):
         """Perform OCR using `pymupdf4llm` to load all pdf data."""
-        return json.loads(pymupdf4llm.to_json(self.pdf, sort=True))
+        return json.loads(
+            pymupdf4llm.to_json(self.pdf, pages=self.page_ranges, sort=True)
+        )
 
     def _parse_page(self, page):
         """Extract statblocks found on the current PDF page."""
@@ -160,7 +170,7 @@ class PdfLoader:
     def _perform_common_fixes(text):
         """Perform quick replacements for common parsing errors that are deleterious to performance."""
 
-        patterns = [(r"\p{Dash}", "-"), (r"Diffi\s+culty", "Difficulty")]
+        patterns = [(r"\p{Dash}", "-"), (r"Diffi\s+culty", "Difficulty"), (r"\s+", " ")]
         for pat, rep in patterns:
             text = re.sub(pat, rep, text)
         return text
@@ -201,7 +211,7 @@ class PdfLoader:
         if match_tier is not None:
             tier = re.sub("[A-Za-z\s]", "", match_tier.group(0))
         else:
-            warnings.warn(f"Could not assign Tier to {name}")
+            logging.warning(f"Could not assign Tier to {name}")
         stat_type = utils.extract_statblock_type(box_text[start + 1][1])
 
         start += 2
@@ -225,7 +235,7 @@ class PdfLoader:
                     feature_text += cleaned
                     start += 1
         if len(feature_text) == 0:
-            warnings.warn(f"No features found for {name}")
+            logging.warning(f"No features found for {name}")
         statblock = self._init_statblock(
             name, tier, stat_type, non_feature_text, feature_text
         )
@@ -309,7 +319,7 @@ class PdfLoader:
         ):
             return True
         # elif line_1[0] == "section-header" and line_2[0] == "section-header":
-        #     warnings.warn(
+        #     logging.warning(
         #         f'Likely statblock start, but "{text}" does not match known types'
         #     )
         #     return False
@@ -318,7 +328,7 @@ class PdfLoader:
     @staticmethod
     def _is_feature_start(line: list[str]) -> str:
         """Determine if the current line indicates the start of the feature list."""
-        return line[0] == "section-header" and line[1].lower() == "features"
+        return line[0] == "section-header" and line[1].lower().strip() == "features"
 
     def _get_statblocks(self) -> None:
         """Check if statblocks have been loaded, load otherwise."""

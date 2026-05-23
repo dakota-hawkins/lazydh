@@ -4,7 +4,7 @@ DICE_REGEX = r"(\d*)d(\d+)(?:\s*([+\-*/])\s*(\d+))?"
 TYPE_REGEX = r"(\s)?(phy|mag|tech)?"
 DAMAGE_REGEX = f"({DICE_REGEX}{TYPE_REGEX})|(" + r"(\s)?[\+\-]\d+" + f"{TYPE_REGEX})"
 FEATURE_REGEX = (
-    r"([A-Za-z0-9\-\(\) ]+\s*-\s*(?:Passive|Reaction|Action):)" + "|"
+    r"([A-Za-z0-9\-\(\)\! ]+\s*-\s*(?:Passive|Reaction|Action):)" + "|"
     f"([Hh]orde \({DICE_REGEX}\)+\s*-\s*Passive:)"
 )
 _STATBLOCK_TYPES = [

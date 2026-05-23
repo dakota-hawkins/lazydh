@@ -77,6 +77,7 @@ def test_statblock_type_parsing(text, stat_type):
             "Horde (2d8 + 3) - Passive: a big guy",
             "Horde (2d8 + 3) - Passive:",
         ),
+        ("A Shrubbery! - Action: Ask for a shrubbery", "A Shrubbery! - Action:"),
     ],
 )
 def test_feature_name_extraction(text, feature_name):

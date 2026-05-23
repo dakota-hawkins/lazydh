@@ -40,6 +40,7 @@ class TestDataParsing:
         [
             ("Stress: 2 ATK: −2 | Whack:", "Stress: 2 ATK: -2 | Whack:"),
             ("Diffi culty", "Difficulty"),
+            ("Horde (1d4+1) – Passive:", "Horde (1d4+1) - Passive:"),
         ],
     )
     def test_common_fixes(self, text: str, fix: str):
