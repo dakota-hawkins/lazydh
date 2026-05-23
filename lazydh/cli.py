@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 
 import typer
 
 from lazydh.reader import PdfLoader
+
+logging.basicConfig(level=logging.WARNING, format="%(levelname)s - %(message)s")
 
 app = typer.Typer()
 

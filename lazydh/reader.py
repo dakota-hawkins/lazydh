@@ -1,7 +1,6 @@
 import itertools
 import json
 import logging
-import warnings
 from pathlib import Path
 
 import pymupdf

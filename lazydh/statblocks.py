@@ -1,5 +1,4 @@
 import logging
-import warnings
 from dataclasses import asdict, dataclass
 
 import regex as re
