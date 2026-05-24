@@ -143,7 +143,7 @@ class PdfLoader:
         """Extract statblocks found on the current PDF page."""
 
         def of_interest(box):
-            return box["boxclass"] not in ["page-footer", "page-header"]
+            return box["boxclass"] not in ["page-footer", "page-header", "picture"]
 
         # separate into left and right columns, then order by height
         box_text = sorted(
