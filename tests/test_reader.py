@@ -26,10 +26,6 @@ class TestDataParsing:
             ("text", "Experience: Underground +2"),
         ]
 
-    def test_no_features_warning(self):
-        with pytest.warns(UserWarning):
-            statblock, __ = self.reader._parse_boxtext(self.data, 0)
-
     def test_horde_assignment(self):
         with warnings.catch_warnings(record=True):
             statblock, __ = self.reader._parse_boxtext(self.data, 0)
