@@ -175,8 +175,9 @@ class PdfLoader:
             (r"\p{Zs}", " "),  # unicode spaces to single space
             (r"[\p{Zl}\p{Zp}]", "\n"),  # standardize line separators
             (r"[’‘`]", "'"),  # standardize apostrophes
-            ("•", ""),
-            (r"[\p{So}]", ""),
+            ("•", ""),  # remove bullets for markdown standardization
+            (r"[\p{So}]", ""),  # remove special weirdos
+            (r"\s+", " "),  # multiple spaces -> single
         ]
         for pat, rep in patterns:
             text = re.sub(pat, rep, text)
@@ -326,11 +327,6 @@ class PdfLoader:
             and utils._STATBLOCK_REGEX.search(text)
         ):
             return True
-        # elif line_1[0] == "section-header" and line_2[0] == "section-header":
-        #     logging.warning(
-        #         f'Likely statblock start, but "{text}" does not match known types'
-        #     )
-        #     return False
         return False
 
     @staticmethod
