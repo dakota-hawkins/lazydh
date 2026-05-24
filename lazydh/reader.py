@@ -169,7 +169,15 @@ class PdfLoader:
     def _perform_common_fixes(text):
         """Perform quick replacements for common parsing errors that are deleterious to performance."""
 
-        patterns = [(r"\p{Dash}", "-"), (r"Diffi\s+culty", "Difficulty"), (r"\s+", " ")]
+        patterns = [
+            (r"\p{Dash}", "-"),
+            (r"Diffi\s+culty", "Difficulty"),
+            (r"\p{Zs}", " "),  # unicode spaces to single space
+            (r"[\p{Zl}\p{Zp}]", "\n"),  # standardize line separators
+            (r"[’‘`]", "'"),  # standardize apostrophes
+            ("•", ""),
+            (r"[\p{So}]", ""),
+        ]
         for pat, rep in patterns:
             text = re.sub(pat, rep, text)
         return text
@@ -230,7 +238,7 @@ class PdfLoader:
                 ):
                     cleaned = re.sub("\s+", " ", box_text[start][1]).strip()
                     if box_text[start][0] == "list-item":
-                        cleaned = "\n    " + cleaned
+                        cleaned = "\n  - " + cleaned
                     feature_text += cleaned
                     start += 1
         if len(feature_text) == 0:
@@ -260,7 +268,8 @@ class PdfLoader:
         Returns:
             Statblock: Initialized statblock.
         """
-        if "thresholds:" in non_feature_text.lower():
+
+        if utils.is_adversary(stat_type, non_feature_text):
             statblock = Adversary(
                 name=name,
                 tier=tier,

@@ -4,7 +4,7 @@ DICE_REGEX = r"(\d*)d(\d+)(?:\s*([+\-*/])\s*(\d+))?"
 TYPE_REGEX = r"(\s)?(phy|mag|tech)?"
 DAMAGE_REGEX = f"({DICE_REGEX}{TYPE_REGEX})|(" + r"(\s)?[\+\-]\d+" + f"{TYPE_REGEX})"
 FEATURE_REGEX = (
-    r"([A-Za-z0-9\-\(\)\! ]+\s*-\s*(?:Passive|Reaction|Action):)" + "|"
+    r"([A-Za-z0-9\-\(\)\!' ]+\s*-\s*(?:Passive|Reaction|Action):)" + "|"
     f"([Hh]orde \({DICE_REGEX}\)+\s*-\s*Passive:)"
 )
 _STATBLOCK_TYPES = [
@@ -23,6 +23,29 @@ _STATBLOCK_TYPES = [
     "traversal",
 ]
 _STATBLOCK_REGEX = re.compile("|".join(f"({x})" for x in _STATBLOCK_TYPES))
+
+
+def is_adversary(stat_type, non_feature_text):
+    stat_type, non_feature_text = stat_type.lower(), non_feature_text.lower()
+    adv_types = [
+        "bruiser",
+        "horde",
+        "leader",
+        "minion",
+        "ranged",
+        "skulk",
+        "solo",
+        "standard",
+        "support",
+    ]
+    # performing redundant checks for more robust assessment
+    if stat_type in adv_types:
+        return True
+    elif stat_type in ["traversal", "event", "exploration"]:
+        return False
+    else:
+        # could be "social", or stat type might be mislabeled, look for hp + thresholds
+        return ("hp" in non_feature_text) or ("thresholds" in non_feature_text)
 
 
 def extract_statblock_type(text):
