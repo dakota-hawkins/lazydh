@@ -1,5 +1,6 @@
 import logging
 from dataclasses import asdict, dataclass
+from typing import Dict, Tuple
 
 import regex as re
 
@@ -22,7 +23,7 @@ class Statblock:
         name = out.pop("name")
         return {name: out}
 
-    def to_fantasy_statblock(self) -> dict:
+    def to_fantasy_statblock(self) -> Dict:
         """Return key-value dictionary following fantasy statblocks format expectations"""
         out = asdict(self)
         feats = []
@@ -47,7 +48,7 @@ class Statblock:
         else:
             logging.warning(f"Could not find features for {self.name}")
 
-    def _features_to_markdown(self):
+    def _features_to_markdown(self) -> str:
         text = "## Features\n\n" + "\n\n".join(
             [f"**{name}:** {utils.highlight_text(desc)}" for name, desc in self.feats]
         )
@@ -55,7 +56,7 @@ class Statblock:
 
     def _search_and_extract(
         self, text: str, pattern: str, value: str, throw_warning: bool = True
-    ) -> tuple[str, str]:
+    ) -> Tuple[str, str]:
         """
         Search for a regex pattern within a string. Extract the matching substring.
 
@@ -69,7 +70,7 @@ class Statblock:
                 substring cannot be found. Defaults to True.
 
         Returns:
-            tuple[str, str]: Tuple of strings where the first element is the extracted
+            Tuple[str, str]: Tuple of strings where the first element is the extracted
                 pattern and the second element is the remaining text following
                 substring extraction.
         """
@@ -84,7 +85,7 @@ class Statblock:
 
     def _extract_and_strip_prefix(
         self, text: str, pattern: str, value: str, throw_warning: bool = True
-    ) -> tuple[str, str]:
+    ) -> Tuple[str, str]:
         """Search for a given string pattern, return match and all proceeding text.
 
         Args:
@@ -96,7 +97,7 @@ class Statblock:
                 substring cannot be found. Defaults to True.
 
         Returns:
-            tuple[str, str]: Tuple of strings where the first element is the extracted
+            Tuple[str, str]: Tuple of strings where the first element is the extracted
                 pattern and the second element is the remaining text following the
                 immediate match.
         """
@@ -148,7 +149,7 @@ class Environment(Statblock):
             out += self._features_to_markdown()
         return prefix + out
 
-    def to_fantasy_statblock(self) -> dict:
+    def to_fantasy_statblock(self) -> Dict:
         """Convert Environment statblock to Fantasy Stablock consistent dictionary."""
         out = super().to_fantasy_statblock()
         out["potential_adversaries"] = out.pop("adversaries")
@@ -168,7 +169,7 @@ source: {self.source}
 """
         return out
 
-    def parse_non_feature_text(self, non_feature_text: str) -> dict:
+    def parse_non_feature_text(self, non_feature_text: str) -> Dict:
         """Parse non-feature text from Environment statblock.
 
         Searches extracted non-feature text to assign the following attributes:
@@ -240,7 +241,7 @@ class Adversary(Statblock):
 
         return prefix + out.rstrip()
 
-    def to_fantasy_statblock(self) -> dict:
+    def to_fantasy_statblock(self) -> Dict:
         """Convert Adversary statblock to Fantasy Stablock consistent dictionary."""
         out = super().to_fantasy_statblock()
         out["atk"] = out.pop("attack_mod")
@@ -282,7 +283,7 @@ source: {self.source}
 """
         return out
 
-    def parse_non_feature_text(self, non_feature_text: str) -> dict:
+    def parse_non_feature_text(self, non_feature_text: str) -> Dict:
         """Parse non-feature text from Adversary statblock.
 
         Searches extracted non-feature text to assign the following attributes:
@@ -302,46 +303,69 @@ source: {self.source}
             non_feature_text (str): Text to parse. Should be the text block immediately
                 preceeding the listed features of the statblock
         """
-        self.description, text = self._search_and_extract(
-            non_feature_text, r"^.*(?=Motives)", "Description"
-        )
-        self.motives_and_tactics, text = self._search_and_extract(
+        self.description, text = self._extract_description(non_feature_text)
+        self._motives_and_tactics, text = self._extract_motives(text)
+        self.experience, text = self._extract_experience(text)
+        self.difficulty, text = self._extract_difficulty(non_feature_text)
+        self.thresholds, text = self._extract_thresholds(text)
+        self.hp, text = self._extract_hp(text)
+        self.stress, text = self._extract_stress(text)
+        self.attack_mod, text = self._extract_attack_mod(text)
+        self.damage, text = self._extract_damage(text)
+        self.attack, self.attack_range = self._extract_attack(text)
+
+    def _extract_description(self, text: str) -> Tuple[str, str]:
+        return self._search_and_extract(text, r"^.*(?=Motives)", "Description")
+
+    def _extract_motives(self, text: str) -> Tuple[str, str]:
+        motives, text = self._search_and_extract(
             text,
             r"Motives & Tactics\:.*(?=Difficulty)",
             "Motives & Tactices",
         )
-        self.motives_and_tactics = self.motives_and_tactics.replace(
-            "Motives & Tactics:", ""
-        ).strip()
-        self.experience, text = self._search_and_extract(
+        motives = motives.replace("Motives & Tactics:", "").strip()
+        return motives, text
+
+    def _extract_experience(self, text: str) -> Tuple[str, str]:
+        experience, text = self._search_and_extract(
             text, r"Experience\:.*$", "Experience", False
         )
-        self.experience = self.experience.replace("Experience:", "").strip()
-        self._extract_combat_info(text)
+        experience = experience.replace("Experience:", "").strip()
+        return experience, text
 
-    def _extract_combat_info(self, non_feature_text: str) -> str:
-        """Extract Adversary combat stats from non-feature text."""
-        self.difficulty, text = self._extract_and_strip_prefix(
-            non_feature_text, r"(?<=Difficulty\:)[0-9\s]+", "Difficulty"
+    def _extract_difficulty(self, text: str) -> Tuple[str, str]:
+        difficulty, text = self._extract_and_strip_prefix(
+            text, r"(?<=Difficulty\:)[0-9\s]+", "Difficulty"
         )
-        self.thresholds, text = self._extract_and_strip_prefix(
+        return difficulty, text
+
+    def _extract_thresholds(self, text: str) -> Tuple[str, str]:
+        thresholds, text = self._extract_and_strip_prefix(
             text, r"(?<=Thresholds\:)\s*(None|[0-9\s]+/[0-9\s]+)", "Thresholds"
         )
-        self.thresholds = re.sub("\s+", "", self.thresholds)
-        self.hp, text = self._extract_and_strip_prefix(text, r"(?<=HP\:)[\s0-9]+", "HP")
-        self.stress, text = self._extract_and_strip_prefix(
-            text, r"(?<=Stress\:)[0-9\s]+", "Stress"
-        )
-        self.attack_mod, text = self._extract_and_strip_prefix(
-            text, r"(?<=ATK\:)[\s\+\-0-9]+", "ATK"
-        )
-        self.damage, text = self._search_and_extract(
-            text, utils.DICE_REGEX + r"\s*(phy|mag|tech|)?", "Damage"
-        )
+        thresholds = re.sub("\s+", "", thresholds)
+        return thresholds, text
+
+    def _extract_hp(self, text: str) -> Tuple[str, str]:
+        return self._extract_and_strip_prefix(text, r"(?<=HP\:)[\s0-9]+", "HP")
+
+    def _extract_stress(self, text: str) -> Tuple[str, str]:
+        return self._extract_and_strip_prefix(text, r"(?<=Stress\:)[0-9\s]+", "Stress")
+
+    def _extract_attack_mod(self, text: str) -> Tuple[str, str]:
+        return self._extract_and_strip_prefix(text, r"(?<=ATK\:)[\s\+\-0-9]+", "ATK")
+
+    def _extract_damage(self, text: str) -> Tuple[str, str]:
+        type_regex = r"\s*(phy|mag|tech|)?"
+        damage_regex = f"{utils.DICE_REGEX}{type_regex}|[\+\-0-9]+{type_regex}"
+        damage, text = self._search_and_extract(text, damage_regex, "Damage")
+        return damage, text
+
+    def _extract_attack(self, text: str) -> Tuple[str, str]:
         attack_regex = r"[A-Za-z\s]+: (Melee|Close|Very Close|Far|Very Far)"
         text, __ = self._search_and_extract(text, attack_regex, "Attack Name and Range")
         if ":" not in text:
             logging.warning(f"Cannot parse attack name and range for {self.name}")
-        else:
-            stripped = [x.strip() for x in text.split(":")]
-            self.attack, self.attack_range = stripped[0], stripped[1]
+            return (None, None)
+        stripped = [x.strip() for x in text.split(":")]
+        return (stripped[0], stripped[1])

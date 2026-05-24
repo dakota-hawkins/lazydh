@@ -77,8 +77,35 @@ def test_statblock_type_parsing(text, stat_type):
             "Horde (2d8 + 3) - Passive: a big guy",
             "Horde (2d8 + 3) - Passive:",
         ),
+        (
+            "Don't Even Think About It - Reaction: nope nope nope",
+            "Don't Even Think About It - Reaction:",
+        ),
         ("A Shrubbery! - Action: Ask for a shrubbery", "A Shrubbery! - Action:"),
     ],
 )
 def test_feature_name_extraction(text, feature_name):
     assert re.search(utils.FEATURE_REGEX, text).group(0) == feature_name
+
+
+@pytest.mark.parametrize(
+    "stat_type, non_feature_text, expected",
+    [
+        ("bruiser", "who cares", True),
+        ("horde", "who cares", True),
+        ("leader", "who cares", True),
+        ("minion", "who cares", True),
+        ("ranged", "who cares", True),
+        ("social", "hp", True),
+        ("social", "thresholds", True),
+        ("solo", "who cares", True),
+        ("standard", "who cares", True),
+        ("support", "who cares", True),
+        ("exploration", "hp", False),
+        ("event", "hp", False),
+        ("social", "an environment", False),
+        ("traversal", "hp", False),
+    ],
+)
+def test_adversary_assessment(stat_type, non_feature_text, expected):
+    assert utils.is_adversary(stat_type, non_feature_text) == expected
