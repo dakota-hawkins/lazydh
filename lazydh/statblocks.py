@@ -325,7 +325,7 @@ source: {self.source}
             non_feature_text, r"(?<=Difficulty\:)[0-9\s]+", "Difficulty"
         )
         self.thresholds, text = self._extract_and_strip_prefix(
-            text, r"(?<=Thresholds\:)[0-9\s]+/[0-9\s]+", "Thresholds"
+            text, r"(?<=Thresholds\:)\s*(None|[0-9\s]+/[0-9\s]+)", "Thresholds"
         )
         self.thresholds = re.sub("\s+", "", self.thresholds)
         self.hp, text = self._extract_and_strip_prefix(text, r"(?<=HP\:)[\s0-9]+", "HP")
