@@ -304,7 +304,7 @@ source: {self.source}
                 preceeding the listed features of the statblock
         """
         self.description, text = self._extract_description(non_feature_text)
-        self._motives_and_tactics, text = self._extract_motives(text)
+        self.motives_and_tactics, text = self._extract_motives(text)
         self.experience, text = self._extract_experience(text)
         self.difficulty, text = self._extract_difficulty(non_feature_text)
         self.thresholds, text = self._extract_thresholds(text)
@@ -356,8 +356,10 @@ source: {self.source}
         return self._extract_and_strip_prefix(text, r"(?<=ATK\:)[\s\+\-0-9]+", "ATK")
 
     def _extract_damage(self, text: str) -> Tuple[str, str]:
-        type_regex = r"\s*(phy|mag|tech|)?"
-        damage_regex = f"{utils.DICE_REGEX}{type_regex}|[\+\-0-9]+{type_regex}"
+        type_regex = r"\s*(phy|mag|tech|)"
+        damage_regex = (
+            f"{utils.DICE_REGEX}{type_regex}|[\+\-0-9]+\s*(phy|mag|tech|Stress)"
+        )
         damage, text = self._search_and_extract(text, damage_regex, "Damage")
         return damage, text
 
