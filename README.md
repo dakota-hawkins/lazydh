@@ -19,13 +19,28 @@ The currently supported output formats are:
 ## Installation
 
 ```bash
+# command line tool only
 uv tool install lazydh
+```
+or 
+
+```bash
+# command line tool AND Python package
+uv add lazydh
 ```
 
 or 
 
 ```bash
 pip install lazydh
+```
+
+### Local Build
+
+```bash
+git clone https://github.com/dakota-hawkins/lazydh
+cd lazydh
+pip install ./
 ```
 
 ### Development Version
