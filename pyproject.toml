@@ -1,6 +1,6 @@
 [project]
 name = "lazydh"
-version = "1.0.0"
+version = "1.0.0b1"
 description = "Convert .pdfs of Daggerheart statblocks to your favorite text-based storage format."
 readme = "README.md"
 requires-python = ">=3.11"
