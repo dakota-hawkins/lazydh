@@ -65,11 +65,12 @@ lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Vo
 By default, `lazydh` writes statblocks to individual markdown files. Two other json-based outputs are also supported in the form of "json" and "fantasy_statblock" options.
 
 ```bash
-lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5 --output json"
+lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5 --output" json
 ```
 
 ```bash
-lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5 --output fantasy_statblock"
+lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5"
+--output fantasy_statblock
 ```
 
 For full options, run:
