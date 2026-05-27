@@ -60,7 +60,7 @@ def main(
         outdir = pdf.parent
     outdir = Path(outdir)
     if not outdir.exists():
-        outdir.mkdir()
+        outdir.mkdir(parents=True)
     file_reader = PdfLoader(pdf=pdf, page_range=pages, source=source)
 
     if output == "markdown":

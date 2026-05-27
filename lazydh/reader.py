@@ -2,6 +2,7 @@ import itertools
 import json
 import logging
 from pathlib import Path
+from typing import Mapping, Tuple
 
 import pymupdf
 import pymupdf4llm
@@ -86,7 +87,7 @@ class PdfLoader:
         for each in self.statblocks_:
             write_dict = write_dict | each.to_dict()
         with open(out_file, "w") as f:
-            json.dump(write_dict, f)
+            json.dump(write_dict, f, indent=4)
 
     def to_fantasy_statblock(self, out_file: str | Path | None = None):
         """Write all PDF statblocks to a Fantasy Statblock compatible json format.
@@ -105,7 +106,7 @@ class PdfLoader:
         for each in self.statblocks_:
             entries.append(each.to_fantasy_statblock())
         with open(out_file, "w") as f:
-            json.dump(entries, f)
+            json.dump(entries, f, indent=4)
 
     # ---------------------- Helper Functions - Data Loading --------------------- #
     def _parse_page_range(self, page_range: None | str) -> str:
@@ -139,7 +140,7 @@ class PdfLoader:
             pymupdf4llm.to_json(self.pdf, pages=self.page_ranges, sort=True)
         )
 
-    def _parse_page(self, page):
+    def _parse_page(self, page: Mapping):
         """Extract statblocks found on the current PDF page."""
 
         def of_interest(box):
@@ -153,7 +154,7 @@ class PdfLoader:
         return self._extract_statblocks(box_text)
 
     @staticmethod
-    def _parse_box(box: dict) -> tuple[str, str, float, float]:
+    def _parse_box(box: dict) -> Tuple[str, str, float, float]:
         """Extract boxclass and related text for all text found in a text box."""
         box_type = box["boxclass"]
 
@@ -184,7 +185,7 @@ class PdfLoader:
         return text
 
     # ------------------- Helper Functions - Statblock Creation ------------------ #
-    def _extract_statblocks(self, box_text: list[tuple[str, str]]) -> list[Statblock]:
+    def _extract_statblocks(self, box_text: list[Tuple[str, str]]) -> list[Statblock]:
         """Extract statblocks from a list of extracted text"""
         statblocks = []
         i = 0
@@ -201,18 +202,18 @@ class PdfLoader:
         return statblocks
 
     def _parse_boxtext(
-        self, box_text: list[tuple[str, str]], start: int
-    ) -> tuple[Statblock, int]:
+        self, box_text: list[Tuple[str, str]], start: int
+    ) -> Tuple[Statblock, int]:
         """Iterate through a list of text to extract a single statblock.
 
         Args:
-            box_text (list[tuple[str, str]]): List of tuples containing text box data.
+            box_text (list[Tuple[str, str]]): List of tuples containing text box data.
                 The first entry for each tuple should be the text class, while the second
                 is the text data.
             start (int): integer index indicating the start of the statblock in `box_text`.
 
         Returns:
-            tuple[Statblock, int]: Extracted statblock and end index.
+            Tuple[Statblock, int]: Extracted statblock and end index.
         """
         name = box_text[start][1].strip().title()
         match_tier = re.search(r"Tier [0-9]+", box_text[start + 1][1])
@@ -310,8 +311,8 @@ class PdfLoader:
             - traversal
 
         Args:
-            line_1 (tuple[str, str]): Current line of extracted text data.
-            line_2 (tuple[str, str]): Next line of extracted text data.
+            line_1 (Tuple[str, str]): Current line of extracted text data.
+            line_2 (Tuple[str, str]): Next line of extracted text data.
 
         Returns:
             bool: Whether `line_1` indicates the start of a new statblock.
