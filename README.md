@@ -38,7 +38,12 @@ uv add lazydh[dev]
 To extract statblocks from a pdf, simply invoke the `lazydh` command from the command line while pointing the tool to your `.pdf` of interest:
 
 ```bash
+# get your favorite set of statblocks
 wget https://www.daggerheart.com/wp-content/uploads/2025/09/Adversaries-Environments-v1.5-.pdf
+```
+
+```bash
+# convert statblocks
 lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5"
 ```
 
