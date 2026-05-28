@@ -2,7 +2,9 @@
 
 `lazydh` converts pdf files of Daggerheart-compatible Adversary and Environment statblocks to text-based formats to meet GMs where they prep.
 
-`lazydh` extracts text using Optical Character Recognition (OCR) via [pymupdf](https://pymupdf.readthedocs.io/en/latest/), and then performs a best-faith reconstruction of each entity. This best-faith reconstruction leverages the predictable structure of Daggerheart-comptabile statblocks to parse extracted text. However, OCR is not perfect, so some errors of varying degrees are likely. If ever `lazydh` is not able to assign an expected trait (e.g. attack mod, environmental impulses, features, etc.) it will throw a warning calling out the specific adversary and attribute it was unable to represent. 
+`lazydh` extracts text using Optical Character Recognition (OCR) via [pymupdf](https://pymupdf.readthedocs.io/en/latest/), and then performs a best-faith reconstruction of each entity. This best-faith reconstruction leverages the predictable structure of Daggerheart-comptabile statblocks to parse extracted text. However, OCR is not perfect, so some errors of varying degrees are likely. If ever `lazydh` is not able to assign an expected trait (e.g. attack mod, environmental impulses, features, etc.) it will throw a warning calling out the specific adversary and attribute it was unable to represent.
+
+`lazydh` is generally robust to art and additional text on statblock-containing pages. Documentation outlining the overall specifications and assumptions are forthcoming.
 
 The currently supported output formats are:
 
