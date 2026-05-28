@@ -12,26 +12,27 @@ The currently supported output formats are:
 
 ## Requirements
 
-`lazydh` is Python package/cli tool and thus requires [Python](https://www.python.org/). The project was built using [uv](https://docs.astral.sh/uv/), and while it _should_ function without it, the added environment management is nice and may come in handy depending on your setup.
+`lazydh` is Python package/cli tool and thus requires [Python](https://www.python.org/). The project was built using [uv](https://docs.astral.sh/uv/), and while it _should_ function without it (using `pip` and `pipx` for library and tool installation, respectively). This document will assume `uv` usage.
 
-`lazydh` has been tested on `linux` and `macos`, but _should_ work on Windows.
+`lazydh` has been tested on linux, MacOS, and Windows.
 
 ## Installation
 
 ```bash
-# command line tool only
+# command line tool only, exposes the `lazydh` executable to your PATH
 uv tool install lazydh
 ```
 or 
 
 ```bash
-# command line tool AND Python package
+# command line tool AND Python package, might need to append `uv run` before each `lazydh` command.
 uv add lazydh
 ```
 
 or 
 
 ```bash
+# will not expose the `lazydh` cli tool
 pip install lazydh
 ```
 
@@ -50,7 +51,7 @@ uv add lazydh[dev]
 
 ## Extracting Statblocks
 
-To extract statblocks from a pdf, simply invoke the `lazydh` command from the command line while pointing the tool to your `.pdf` of interest:
+To extract statblocks from a `.pdf`, simply invoke the `lazydh` command from the command line while pointing the tool to your `.pdf` of interest:
 
 ```bash
 # get your favorite set of statblocks
@@ -61,6 +62,7 @@ wget https://www.daggerheart.com/wp-content/uploads/2025/09/Adversaries-Environm
 # convert statblocks
 lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5"
 ```
+### Alternative Formats
 
 By default, `lazydh` writes statblocks to individual markdown files. Two other json-based outputs are also supported in the form of "json" and "fantasy_statblock" options.
 
@@ -73,6 +75,20 @@ lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Vo
 --output fantasy_statblock
 ```
 
+By default, markdown files contain `.yaml` front matter for use in Obsidian. You can disable this by using the `--no-frontmatter` flag
+
+```bash
+lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5" --no-frontmatter
+```
+
+### Only Parsing Specific Pages
+
+If you would like to **only** extract statblocks from specific pages, use the `--pages` argument to specify the desired ranges.
+
+```bash
+lazydh Adversaries-Environments-v1.5-.pdf --outdir output/void-v1-5 --source "Void 1.5" --pages 1-2,5-6
+```
+
 For full options, run:
 ```bash
 lazydh --help
@@ -80,14 +96,24 @@ lazydh --help
 
 ## Python Library
 
-`lazydh` is not _only_ a command line utility, but also a fully-fleged Python package. There is more flexibility in the Python package than is exposed to the command line tool. For example, if you would like to **not** print `.yaml` front matter for each markdown file, this can be accomplished in the following way:
+`lazydh` is not _only_ a command line utility, but also a fully-fleged Python package. There is more flexibility in the Python package than is exposed to the command line tool. For example, you can extend the base `PdfLoader` class to support new output formats.
 
 ```python
-from lazydh import PdfLoader
+from lazydh.reader import PdfLoader
+from pathlib import Path
 
-reader = PdfLoader("Adversaries-Environments-v1.5-.pdf")
-reader.read_statblocks()
-reader.to_markdown(out_dir = "output/void-v1-5", frontmatter=False)
+class MyReader(PdfLoader):
+
+    def to_text(self, out_file: Path | None = None):
+        if out_file is None:
+            out_file = self.pdf.with_suffix(".txt")
+        self._get_statblocks()
+        lines = "\n".join([str(x) for x in self.statblocks_])
+        with open(out_file, 'w') as f:
+            f.writelines(lines)
+
+reader = MyReader("Adversaries-Environments-v1.5-.pdf")
+reader.to_text(out_file = "statblocks.txt")
 ```
 
 ## Roadmap 
