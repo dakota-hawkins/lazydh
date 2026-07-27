@@ -180,6 +180,8 @@ class PdfLoader:
             (r"[\p{So}]", ""),  # remove special weirdos
             (r"\s+", " "),  # multiple spaces -> single
         ]
+        # weird digit parsing in Hope and Fear: (\ue541 -> 1)
+        text = re.sub(r"[\ue540-\ue549]", lambda m: str(ord(m.group(0)) - 0xE540), text)
         for pat, rep in patterns:
             text = re.sub(pat, rep, text)
         return text

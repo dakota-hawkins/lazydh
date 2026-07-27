@@ -37,6 +37,15 @@ class TestDataParsing:
             ("Stress: 2 ATK: −2 | Whack:", "Stress: 2 ATK: -2 | Whack:"),
             ("Diffi culty", "Difficulty"),
             ("Horde (1d4+1) – Passive:", "Horde (1d4+1) - Passive:"),
+            ("Minion \ue541", "Minion 1"),
+            ("Minion \ue542", "Minion 2"),
+            ("Minion \ue543", "Minion 3"),
+            ("Minion \ue544", "Minion 4"),
+            ("Minion \ue545", "Minion 5"),
+            ("Minion \ue546", "Minion 6"),
+            ("Minion \ue547", "Minion 7"),
+            ("Minion \ue548", "Minion 8"),
+            ("Minion \ue549", "Minion 9"),
         ],
     )
     def test_common_fixes(self, text: str, fix: str):
