@@ -24,6 +24,18 @@ _STATBLOCK_TYPES = [
 ]
 _STATBLOCK_REGEX = re.compile("|".join(f"({x})" for x in _STATBLOCK_TYPES))
 
+_PARSING_SUBSTITUTIONS = [
+    (r"\p{Dash}", "-"),
+    (r"Diffi\s+culty", "Difficulty"),
+    (r"\ue54", ""),  # weird number parsing error in Hope&Fear
+    (r"\p{Zs}", " "),  # unicode spaces to single space
+    (r"[\p{Zl}\p{Zp}]", "\n"),  # standardize line separators
+    (r"[’‘`]", "'"),  # standardize apostrophes
+    ("•", ""),  # remove bullets for markdown standardization
+    (r"[\p{So}]", ""),  # remove special weirdos
+    (r"\s+", " "),  # multiple spaces -> single
+]
+
 
 def is_adversary(stat_type, non_feature_text):
     stat_type, non_feature_text = stat_type.lower(), non_feature_text.lower()
