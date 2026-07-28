@@ -157,8 +157,7 @@ class Environment(Statblock):
 
     def _to_yaml_front_matter(self):
         """Convert Environment statblock to yaml front matter."""
-        out = f"""
----
+        out = f"""---
 type: environment
 class: {self.stat_type}
 description: {self.description}
@@ -262,8 +261,7 @@ class Adversary(Statblock):
             stat_type = re.search("^[A-Za-z]+", self.stat_type).group(0)
         else:
             stat_type = self.stat_type
-        out = f"""
----
+        out = f"""---
 type: adversary
 description: {self.description}
 tier: {self.tier}
@@ -341,7 +339,9 @@ source: {self.source}
 
     def _extract_thresholds(self, text: str) -> Tuple[str, str]:
         thresholds, text = self._extract_and_strip_prefix(
-            text, r"(?<=Thresholds\:)\s*(None|[0-9\s]+/[0-9\s]+)", "Thresholds"
+            text,
+            r"(?<=Thresholds\:)\s*(None|[0-9\s]+/[0-9\s]+|[0-9\s]+/None)",
+            "Thresholds",
         )
         thresholds = re.sub("\s+", "", thresholds)
         return thresholds, text
@@ -356,10 +356,8 @@ source: {self.source}
         return self._extract_and_strip_prefix(text, r"(?<=ATK\:)[\s\+\-0-9]+", "ATK")
 
     def _extract_damage(self, text: str) -> Tuple[str, str]:
-        type_regex = r"\s*(phy|mag|tech|)"
-        damage_regex = (
-            f"{utils.DICE_REGEX}{type_regex}|[\+\-0-9]+\s*(phy|mag|tech|Stress)"
-        )
+        type_regex = r"\s*(direct)?\s*(phy|mag|tech|)"
+        damage_regex = f"{utils.DICE_REGEX}{type_regex}|[\+\-0-9]+\s*(direct)?\s*(phy|mag|tech|Stress)"
         damage, text = self._search_and_extract(text, damage_regex, "Damage")
         return damage, text
 
