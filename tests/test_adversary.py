@@ -110,8 +110,7 @@ class TestAdversaryIO:
         assert self.adv.to_markdown(front_matter=False) == expected
 
     def test_yaml_front_matter(self):
-        expected = """
----
+        expected = """---
 type: adversary
 description: A Remnant of Forgotten Knowledge and Forbidden Secrets
 tier: 2
@@ -197,6 +196,7 @@ class TestAdversaryParsing:
             ("| Smack: Melee | d8-1 tech", "d8-1 tech"),
             ("| Smack: Nibble | +3 phy", "+3 phy"),
             ("| Smack: Boop | 1 phy", "1 phy"),
+            ("| Smack: Dead | 40 direct phy", "40 direct phy"),
         ],
     )
     def test_damage_parsing(self, text, value):
@@ -208,6 +208,7 @@ class TestAdversaryParsing:
             ("| Thresholds: 1/2", "1/2"),
             ("| Thresholds: 588/666", "588/666"),
             ("| Thresholds: None", "None"),
+            (" Thresholds: 5/None ", "5/None"),
         ],
     )
     def test_threshold_parsing(self, text, value):

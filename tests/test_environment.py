@@ -84,8 +84,7 @@ class TestAdversaryIO:
         assert self.env.to_markdown(front_matter=False) == expected
 
     def test_yaml_front_matter(self):
-        expected = """
----
+        expected = """---
 type: environment
 class: Social
 description: The Great Gates of Ardent Bar Entrance into the City
