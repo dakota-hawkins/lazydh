@@ -145,6 +145,8 @@ class Environment(Statblock):
 
         if self.adversaries is not None:
             out += f"\n> **Potential Adversaries:** {self.adversaries}\n\n"
+        else:
+            out += "\n\n"  # line break between last entry and features
         if self.feats is not None:
             out += self._features_to_markdown()
         return prefix + out
@@ -181,20 +183,32 @@ source: {self.source}
             non_feature_text (str): Text to parse. Should be the text block immediately
                 preceeding the listed features of the statblock
         """
-        self.description, text = self._search_and_extract(
-            non_feature_text, r"^.*(?=Impulses\:)", "Description"
-        )
-        self.impulses, text = self._extract_and_strip_prefix(
-            text, r"(?<=Impulses\: ).*(?=Difficulty\:)", "Impulses"
-        )
-        self.difficulty, text = self._extract_and_strip_prefix(
-            text, r"(?<=Difficulty\: )[0-9]+", "Difficulty"
-        )
-        self.adversaries, text = self._extract_and_strip_prefix(
-            text, r"(?<=Potential Adversaries\: ).*", "Potential Adversaries"
-        )
+        self.description, text = self._extract_description(non_feature_text)
+        self.impulses, text = self._extract_impulses(text)
+        self.difficulty, text = self._extract_difficulty(text)
+        self.adversaries, text = self._extract_adversaries(text)
         if self.adversaries == "":
             self.adversaries = None
+
+    def _extract_description(self, text):
+        return self._search_and_extract(text, r"^.*(?=Impulses\:)", "Description")
+
+    def _extract_impulses(self, text):
+        return self._extract_and_strip_prefix(
+            text, r"(?<=Impulses\: ).*(?=Difficulty\:)", "Impulses"
+        )
+
+    def _extract_difficulty(self, text: str) -> Tuple[str, str]:
+        pattern = (
+            r"(?<=Difficulty\:)(\s+)?(([0-9\s]+)|"
+            + r'(Special \(see "Relative Strength"\)))'
+        )
+        return self._extract_and_strip_prefix(text, pattern, "Difficulty")
+
+    def _extract_adversaries(self, text: str) -> Tuple[str, str]:
+        return self._extract_and_strip_prefix(
+            text, r"(?<=Potential Adversaries\:(\s+)?).*", "Potential Adversaries"
+        )
 
 
 @dataclass
@@ -333,7 +347,9 @@ source: {self.source}
 
     def _extract_difficulty(self, text: str) -> Tuple[str, str]:
         difficulty, text = self._extract_and_strip_prefix(
-            text, r"(?<=Difficulty\:)[0-9\s]+", "Difficulty"
+            text,
+            r"(?<=Difficulty\:)([0-9\s]+)",
+            "Difficulty",
         )
         return difficulty, text
 

@@ -32,6 +32,35 @@ class TestEnvironmentParsing:
             == "Merchant Baron, Sellsword, Bladed Guard, Head Guard, War Wizard"
         )
 
+    @pytest.mark.parametrize(
+        "text, value",
+        [
+            ("Difficulty: 14", "14"),
+            (
+                'Difficulty: Special (see "Relative Strength")',
+                'Special (see "Relative Strength")',
+            ),
+        ],
+    )
+    def test_difficulty_extraction(self, text, value):
+        assert self.env._extract_difficulty(text)[0] == value
+
+    @pytest.mark.parametrize(
+        "text, value",
+        [
+            (
+                "Potential Adversaries: a lot of things, really",
+                "a lot of things, really",
+            ),
+            (
+                "Potential Adversaries:a lot of things, really",
+                "a lot of things, really",
+            ),
+        ],
+    )
+    def test_adversary_extraction(self, text, value):
+        assert self.env._extract_adversaries(text)[0] == value
+
 
 class TestAdversaryIO:
     def setup_method(self):
